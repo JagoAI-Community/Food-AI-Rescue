@@ -16,8 +16,8 @@ interface StatsDashboardProps {
         progressToNext: number;
         weeklyActivity: number[];
     };
-    ranks: RankLevel[];
-    quests: DailyQuest[];
+    ranks?: RankLevel[];
+    quests?: DailyQuest[];
     isLoading?: boolean;
     socialSystem?: any;
 }
@@ -43,7 +43,7 @@ const ActivityChart = ({ data }: { data: number[] }) => {
   );
 };
 
-export const StatsDashboard: React.FC<StatsDashboardProps> = ({ stats, quests, isLoading, socialSystem }) => {
+export const StatsDashboard: React.FC<StatsDashboardProps> = ({ stats, quests = [], isLoading, socialSystem }) => {
   const [showRankDetails, setShowRankDetails] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
 

@@ -26,7 +26,11 @@ export const getSocialSystem = (rankLevels: any[]) => {
 
     // Ensure tiers are sorted by minPoints
     Object.keys(system).forEach(key => {
-        system[key].tiers.sort((a: any, b: any) => a.minPoints - b.minPoints);
+        if (system[key].tiers.length === 0) {
+            system[key].tiers = STATIC_SOCIAL_SYSTEM[key].tiers;
+        } else {
+            system[key].tiers.sort((a: any, b: any) => a.minPoints - b.minPoints);
+        }
     });
 
     return system;

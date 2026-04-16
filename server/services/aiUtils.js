@@ -140,7 +140,28 @@ async function callGeminiWithRotation(userId, prompt, options = {}) {
             }
 
             console.log(`[AI Utils] ✅ Success with key ${keyLabel}`);
-            return options.isJson ? JSON.parse(text) : text;
+            
+            let parsedResult = text;
+            if (options.isJson) {
+                let cleanText = text.trim();
+                if (cleanText.startsWith("\`\`\`json")) cleanText = cleanText.substring(7);
+                else if (cleanText.startsWith("\`\`\`")) cleanText = cleanText.substring(3);
+                if (cleanText.endsWith("\`\`\`")) cleanText = cleanText.substring(0, cleanText.length - 3);
+                cleanText = cleanText.trim();
+                
+                // Fallback attempt to extract JSON object/array if there's trailing text
+                if (!cleanText.endsWith("}") && !cleanText.endsWith("]")) {
+                    const lastBrace = cleanText.lastIndexOf("}");
+                    const lastBracket = cleanText.lastIndexOf("]");
+                    const lastIdx = Math.max(lastBrace, lastBracket);
+                    if (lastIdx !== -1) {
+                        cleanText = cleanText.substring(0, lastIdx + 1);
+                    }
+                }
+                
+                parsedResult = JSON.parse(cleanText);
+            }
+            return parsedResult;
 
         } catch (error) {
             lastError = error;

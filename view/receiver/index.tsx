@@ -101,6 +101,11 @@ export const ReceiverIndex: React.FC<ReceiverIndexProps> = ({
                 claimHistory={claimHistory} 
                 currentUser={currentUser} 
             />
+        ) : showKitchenScanner ? (
+            <KitchenScanner 
+                currentUser={currentUser} 
+                onBack={() => setShowKitchenScanner(false)} 
+            />
         ) : (
             <>
                 {/* Kitchen Scanner Promo Widget */}
@@ -139,13 +144,6 @@ export const ReceiverIndex: React.FC<ReceiverIndexProps> = ({
                     disableExpiryLogic={disableExpiryLogic}
                 />
             </>
-        )}
-
-        {showKitchenScanner && (
-            <KitchenScanner 
-                currentUser={currentUser} 
-                onBack={() => setShowKitchenScanner(false)} 
-            />
         )}
 
         {showSplash && splashData && (

@@ -17,13 +17,13 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     historicalData = [] 
 }) => {
     const isLive = mode === 'live';
-    const displayData = isLive ? data : historicalData.map(h => ({
-        id: h.user_id,
+    const displayData = (isLive ? (data || []) : (historicalData || []).map(h => ({
+        id: h.user_id || h.id,
         name: h.name,
         points: h.points,
         rank: h.rank,
         avatar: h.avatar
-    }));
+    }))) || [];
 
     const top1 = displayData.find(i => i.rank === 1);
     const top2 = displayData.find(i => i.rank === 2);

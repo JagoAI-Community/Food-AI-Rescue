@@ -99,136 +99,117 @@ export const ProviderIndex: React.FC<ProviderIndexProps> = ({
       };
   }, [foodItems, claimHistory, userName, socialImpact]);
 
+  const renderContent = () => {
+      if (showKitchenScanner) return <KitchenScanner currentUser={currentUser} onBack={() => setShowKitchenScanner(false)} />;
+      if (showPackagingEditor) return <EcoPackagingEditor currentUser={currentUser} foodItems={foodItems} onBack={() => setShowPackagingEditor(false)} />;
+      if (showCSREditor) return <CSRWriterEditor currentUser={currentUser} foodItems={foodItems} onBack={() => setShowCSREditor(false)} />;
+      if (showKitchenHistory) return <KitchenHistory currentUser={currentUser} onBack={() => setShowKitchenHistory(false)} />;
+
+      return (
+          <div className="p-6 md:p-8 max-w-5xl mx-auto pb-32">
+              <header className="mb-8 flex justify-between items-start">
+                  <div className="animate-in slide-in-from-left duration-500">
+                      <h1 className="text-3xl font-black text-stone-900 dark:text-white tracking-tighter leading-none italic uppercase">Dashboard Donatur</h1>
+                      <p className="text-[10px] text-stone-500 font-black uppercase tracking-widest mt-2 bg-stone-100 dark:bg-stone-800 px-3 py-1 rounded-lg w-fit">Integritas Pangan AI</p>
+                  </div>
+                  
+                  <button 
+                      onClick={onOpenNotifications} 
+                      className="relative p-3 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 text-stone-500 hover:text-orange-600 transition-all shadow-sm group active:scale-95"
+                  >
+                      <Bell className="w-6 h-6" />
+                      <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-orange-600 border-2 border-white rounded-full animate-pulse"></span>
+                  </button>
+              </header>
+
+              <div className="mb-8 p-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2.5rem] shadow-xl shadow-orange-500/20 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
+                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-full text-[9px] font-black text-white uppercase tracking-widest">Fitur Baru</span>
+                          </div>
+                          <h3 className="text-xl font-black text-white leading-tight">Gak tahu mau masak apa? <br/> Foto bahan makananmu di sini!</h3>
+                          <p className="text-white/70 text-[10px] font-medium uppercase tracking-widest">AI rekomendasikan resep sisa pangan kreatif</p>
+                      </div>
+                      <button 
+                          onClick={() => setShowKitchenScanner(true)}
+                          className="px-8 py-4 bg-white text-orange-600 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-orange-50 transition-all shadow-lg active:scale-95"
+                      >
+                          Buka Kitchen AI
+                      </button>
+                  </div>
+              </div>
+              
+              <DashboardStats 
+                  setActiveTab={onNavigate} 
+                  stats={stats}
+                  userId={String(currentUser?.id || '')}
+                  socialSystem={socialSystem}
+              />
+
+              <div className="mt-10">
+                  <NearbyRequests />
+              </div>
+
+              {currentUser?.role === 'corporate_donor' && (
+                  <CorporateAIWidgets 
+                      currentUser={currentUser} 
+                      foodItems={foodItems} 
+                      onOpenTool={(tool) => {
+                          if (tool === 'recipe') setShowKitchenScanner(true);
+                          if (tool === 'packaging') setShowPackagingEditor(true);
+                          if (tool === 'csr') setShowCSREditor(true);
+                      }}
+                  />
+              )}
+
+              {/* AI Tools Section */}
+              <div className="mt-10 space-y-4">
+                  <div className="flex items-center justify-between px-2">
+                      <h2 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-widest italic">Peralatan AI Kreatif</h2>
+                      <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest bg-orange-50 px-2 py-0.5 rounded-full">Kreativitas Tanpa Batas</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                      <button 
+                          onClick={() => setShowKitchenScanner(true)}
+                          className="p-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-[2.5rem] flex flex-col items-center text-center gap-3 hover:border-orange-500 hover:shadow-xl hover:shadow-orange-100 transition-all group"
+                      >
+                          <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+                              <Sparkles className="w-7 h-7" />
+                          </div>
+                          <div>
+                              <p className="text-xs font-black text-stone-900 dark:text-white uppercase italic tracking-tight">Eksplor Kitchen AI</p>
+                              <p className="text-[9px] text-stone-500 font-medium uppercase mt-0.5">Mulai Scan Bahan</p>
+                          </div>
+                      </button>
+
+                      <button 
+                          onClick={() => setShowKitchenHistory(true)}
+                          className="p-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-[2.5rem] flex flex-col items-center text-center gap-3 hover:border-orange-500 hover:shadow-xl hover:shadow-orange-100 transition-all group"
+                      >
+                          <div className="w-14 h-14 bg-stone-100 dark:bg-stone-800 rounded-2xl flex items-center justify-center text-stone-400 group-hover:text-orange-600 group-hover:scale-110 transition-transform">
+                               <Utensils className="w-7 h-7" />
+                          </div>
+                          <div>
+                              <p className="text-xs font-black text-stone-900 dark:text-white uppercase italic tracking-tight">Riwayat Resep</p>
+                              <p className="text-[9px] text-stone-500 font-medium uppercase mt-0.5">Lihat Koleksi Anda</p>
+                          </div>
+                      </button>
+                  </div>
+              </div>
+          </div>
+      );
+  };
+
   return (
     <>
         {currentUser?.isNewUser && (
             <OnboardingTour role={currentUser.role as any} onFinish={handleFinishTour} />
         )}
         
-        <div className="p-6 md:p-8 max-w-5xl mx-auto pb-32">
-            <header className="mb-8 flex justify-between items-start">
-                <div className="animate-in slide-in-from-left duration-500">
-                    <h1 className="text-3xl font-black text-stone-900 dark:text-white tracking-tighter leading-none italic uppercase">Dashboard Donatur</h1>
-                    <p className="text-[10px] text-stone-500 font-black uppercase tracking-widest mt-2 bg-stone-100 dark:bg-stone-800 px-3 py-1 rounded-lg w-fit">Integritas Pangan AI</p>
-                </div>
-                
-                <button 
-                    onClick={onOpenNotifications} 
-                    className="relative p-3 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 text-stone-500 hover:text-orange-600 transition-all shadow-sm group active:scale-95"
-                >
-                    <Bell className="w-6 h-6" />
-                    <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-orange-600 border-2 border-white rounded-full animate-pulse"></span>
-                </button>
-            </header>
-
-            <div className="mb-8 p-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2.5rem] shadow-xl shadow-orange-500/20 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-full text-[9px] font-black text-white uppercase tracking-widest">Fitur Baru</span>
-                        </div>
-                        <h3 className="text-xl font-black text-white leading-tight">Gak tahu mau masak apa? <br/> Foto bahan makananmu di sini!</h3>
-                        <p className="text-white/70 text-[10px] font-medium uppercase tracking-widest">AI rekomendasikan resep sisa pangan kreatif</p>
-                    </div>
-                    <button 
-                        onClick={() => setShowKitchenScanner(true)}
-                        className="px-8 py-4 bg-white text-orange-600 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-orange-50 transition-all shadow-lg active:scale-95"
-                    >
-                        Buka Kitchen AI
-                    </button>
-                </div>
-            </div>
-            
-            <DashboardStats 
-                setActiveTab={onNavigate} 
-                stats={stats}
-                userId={String(currentUser?.id || '')}
-                socialSystem={socialSystem}
-            />
-
-            <div className="mt-10">
-                <NearbyRequests />
-            </div>
-
-            {currentUser?.role === 'corporate_donor' && (
-                <CorporateAIWidgets 
-                    currentUser={currentUser} 
-                    foodItems={foodItems} 
-                    onOpenTool={(tool) => {
-                        if (tool === 'recipe') setShowKitchenScanner(true);
-                        if (tool === 'packaging') setShowPackagingEditor(true);
-                        if (tool === 'csr') setShowCSREditor(true);
-                    }}
-                />
-            )}
-
-            {/* AI Tools Section */}
-            <div className="mt-10 space-y-4">
-                <div className="flex items-center justify-between px-2">
-                    <h2 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-widest italic">Peralatan AI Kreatif</h2>
-                    <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest bg-orange-50 px-2 py-0.5 rounded-full">Kreativitas Tanpa Batas</span>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                    <button 
-                        onClick={() => setShowKitchenScanner(true)}
-                        className="p-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-[2.5rem] flex flex-col items-center text-center gap-3 hover:border-orange-500 hover:shadow-xl hover:shadow-orange-100 transition-all group"
-                    >
-                        <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
-                            <Sparkles className="w-7 h-7" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-black text-stone-900 dark:text-white uppercase italic tracking-tight">Eksplor Kitchen AI</p>
-                            <p className="text-[9px] text-stone-500 font-medium uppercase mt-0.5">Mulai Scan Bahan</p>
-                        </div>
-                    </button>
-
-                    <button 
-                        onClick={() => setShowKitchenHistory(true)}
-                        className="p-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-[2.5rem] flex flex-col items-center text-center gap-3 hover:border-orange-500 hover:shadow-xl hover:shadow-orange-100 transition-all group"
-                    >
-                        <div className="w-14 h-14 bg-stone-100 dark:bg-stone-800 rounded-2xl flex items-center justify-center text-stone-400 group-hover:text-orange-600 group-hover:scale-110 transition-transform">
-                             <Utensils className="w-7 h-7" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-black text-stone-900 dark:text-white uppercase italic tracking-tight">Riwayat Resep</p>
-                            <p className="text-[9px] text-stone-500 font-medium uppercase mt-0.5">Lihat Koleksi Anda</p>
-                        </div>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        {showKitchenScanner && (
-            <KitchenScanner 
-                currentUser={currentUser} 
-                onBack={() => setShowKitchenScanner(false)} 
-            />
-        )}
-
-        {showPackagingEditor && (
-            <EcoPackagingEditor 
-                currentUser={currentUser} 
-                foodItems={foodItems} 
-                onBack={() => setShowPackagingEditor(false)} 
-            />
-        )}
-
-        {showCSREditor && (
-            <CSRWriterEditor 
-                currentUser={currentUser} 
-                foodItems={foodItems} 
-                onBack={() => setShowCSREditor(false)} 
-            />
-        )}
-
-        {showKitchenHistory && (
-            <KitchenHistory 
-                currentUser={currentUser} 
-                onBack={() => setShowKitchenHistory(false)} 
-            />
-        )}
+        {renderContent()}
     </>
   );
 };

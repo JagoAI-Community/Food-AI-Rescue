@@ -22,7 +22,7 @@ interface HistoryListProps {
     isLoading?: boolean;
 }
 
-export const HistoryList: React.FC<HistoryListProps> = ({ history, onFindMissions, onSelect, isLoading }) => {
+export const HistoryList: React.FC<HistoryListProps> = ({ history = [], onFindMissions, onSelect, isLoading }) => {
     
     // Custom formatter for "DD/MM/YYYY - HH:MM:SS - AM/PM"
     const formatDateDetail = (dateString: string) => {

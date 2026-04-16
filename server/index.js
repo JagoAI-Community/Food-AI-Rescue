@@ -706,9 +706,15 @@ async function updateFoodStock(id, newQuantity) {
 
 async function updateFoodItem(data) {
     const { id, name, description, currentQuantity, expiryTime, imageUrl, deliveryMethod, status } = data;
+    
+    let formattedExpiry = expiryTime;
+    if (formattedExpiry && typeof formattedExpiry === 'string' && formattedExpiry.includes('T')) {
+        formattedExpiry = formattedExpiry.replace('T', ' ').substring(0, 19);
+    }
+
     await db.query(
         'UPDATE food_items SET name=?, description=?, current_quantity=?, expiry_time=?, image_url=?, delivery_method=?, status=? WHERE id=?',
-        [name, description, currentQuantity, expiryTime, imageUrl, deliveryMethod.toUpperCase(), status.toUpperCase(), id]
+        [name, description, currentQuantity, formattedExpiry, imageUrl, deliveryMethod.toUpperCase(), status.toUpperCase(), id]
     );
     return data;
 }

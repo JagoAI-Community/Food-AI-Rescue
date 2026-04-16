@@ -13,13 +13,22 @@ async function scanKitchen(data, userId) {
         1. Identifikasi daftar bahan makanan yang terlihat jelas.
         2. Tafsirkan bahan-bahan tersebut ke dalam teks deskripsi singkat.
         3. Analisis dan racik 1 rekomendasi resep masakan kreatif dari bahan tersebut.
+           FORMAT OUTPUT RESEP:
+           Bahan:
+           - [item]
+           
+           Alat:
+           - [item]
+           
+           Langkah:
+           1. [langkah]
         4. Berikan tips penyimpanan agar bahan tetap awet.
 
         OUTPUT JSON:
         {
           "ingredients": ["string"],
           "description": "string (Tafsiran visual bahan)",
-          "recipe": "string (Langkah masak singkat)",
+          "recipe": "string (Resep lengkap dengan format: Bahan, Alat, Langkah)",
           "tips": "string",
           "cookpadQuery": "string (Kata kunci pencarian optimal untuk Cookpad)"
         }
@@ -53,11 +62,20 @@ async function generateRecipe(data, userId) {
         
         TUGAS:
         Berikan 1 resep kreatif yang bisa dibuat dari bahan tersebut.
-        Gunakan langkah-langkah yang ringkas dan menarik.
+        
+        FORMAT OUTPUT RESEP WAJIB:
+        Bahan:
+        - [item]
+        
+        Alat:
+        - [item]
+        
+        Langkah:
+        1. [langkah]
 
         OUTPUT JSON:
         {
-          "recipe": "string (Nama menu dan langkah masak)"
+          "recipe": "string (Isi resep lengkap sesuai format di atas)"
         }
     `;
 

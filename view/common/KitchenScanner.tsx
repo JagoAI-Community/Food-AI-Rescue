@@ -228,8 +228,8 @@ export const KitchenScanner: React.FC<KitchenScannerProps> = ({ currentUser, onB
                                     <span className="bg-orange-100 dark:bg-orange-900/30 text-orange-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Cepat & Sehat</span>
                                 </div>
                                 <div className="p-6 bg-stone-50 dark:bg-stone-950/50 rounded-[2rem] border border-stone-100 dark:border-stone-800">
-                                    <p className="text-stone-800 dark:text-stone-200 text-sm font-medium leading-relaxed italic">
-                                        "{result.recipe}"
+                                    <p className="text-stone-800 dark:text-stone-200 text-sm font-medium leading-relaxed whitespace-pre-line">
+                                        {result.recipe}
                                     </p>
                                 </div>
                             </div>

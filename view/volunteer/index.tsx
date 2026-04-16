@@ -390,11 +390,26 @@ export const VolunteerIndex: React.FC<VolunteerIndexProps> = ({
       });
 
       const volunteerSystem = socialSystem?.volunteer || SOCIAL_SYSTEM.volunteer;
-      const currentRankObj = volunteerSystem.tiers.slice().reverse().find(t => totalPoints >= t.minPoints) || volunteerSystem.tiers[0];
-      const nextRankObj = volunteerSystem.tiers.find(t => t.minPoints > totalPoints);
-      const progressToNext = nextRankObj ? Math.min(((totalPoints - currentRankObj.minPoints) / (nextRankObj.minPoints - currentRankObj.minPoints)) * 100, 100) : 100;
+      const tiers = volunteerSystem.tiers || [];
+      const currentRankObj = tiers.slice().reverse().find(t => totalPoints >= t.minPoints) || tiers[0] || { name: "Relawan", minPoints: 0 };
+      const nextRankObj = tiers.find(t => t.minPoints > totalPoints);
+      
+      let progressToNext = 100;
+      if (nextRankObj && currentRankObj && (nextRankObj.minPoints - currentRankObj.minPoints) > 0) {
+          progressToNext = Math.min(((totalPoints - currentRankObj.minPoints) / (nextRankObj.minPoints - currentRankObj.minPoints)) * 100, 100);
+      }
 
-      return { points: totalPoints, missionsCompleted, totalDistance, hoursContributed: missionsCompleted, currentRank: currentRankObj.name, nextRank: nextRankObj?.name || "Max", progressToNext, weeklyActivity, volunteerSystem };
+      return { 
+          points: totalPoints, 
+          missionsCompleted, 
+          totalDistance, 
+          hoursContributed: missionsCompleted, 
+          currentRank: currentRankObj.name, 
+          nextRank: nextRankObj?.name || "Max", 
+          progressToNext, 
+          weeklyActivity, 
+          volunteerSystem 
+      };
   }, [myCompletedTasks, currentUser, socialSystem]);
 
   const handleStartScan = (taskId: string | number) => {
@@ -506,47 +521,21 @@ export const VolunteerIndex: React.FC<VolunteerIndexProps> = ({
             )}
 
             {activeTab === 'history' && (
-                <div className="space-y-10">
-                    <StatsDashboard stats={stats} socialSystem={socialSystem} />
-                    
-                    <section className="space-y-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-600 rounded-xl">
-                                <Trophy className="w-5 h-5 text-white" />
-                            </div>
-                            <h2 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight italic">Peringkat Relawan</h2>
+                <div className="space-y-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-stone-900 dark:bg-stone-800 rounded-xl">
+                            <History className="w-5 h-5 text-white" />
                         </div>
-                        <Leaderboard 
-                            data={leaderboardData} 
-                            mode={leaderboardMode}
-                            onToggleMode={setLeaderboardMode}
-                            historicalData={historicalLeaderboard}
-                        />
-                    </section>
-                    
-                    <section className="space-y-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-stone-900 dark:bg-stone-800 rounded-xl">
-                                <History className="w-5 h-5 text-white" />
-                            </div>
-                            <h2 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight italic">Aktivitas Terakhir</h2>
-                        </div>
-                        <HistoryList 
-                            history={myCompletedTasks.map(c => ({ 
-                                // FIX: handle numeric ID or string ID safely
-                                id: parseInt(String(c.id).replace(/\D/g, '') || '0'),
-                                originalId: String(c.id), 
-                                date: c.date, 
-                                from: c.providerName, 
-                                to: 'Penerima', 
-                                items: c.foodName, 
-                                points: 150,
-                                status: c.status 
-                            }))} 
-                            onSelect={handleHistorySelect}
-                            isLoading={isLoading}
-                        />
-                    </section>
+                        <h2 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight italic">Misi Selesai</h2>
+                    </div>
+                    <MissionList 
+                        tasks={globalTasks.filter(t => t.status === 'history')} 
+                        activeTab="history" 
+                        onAcceptTask={() => {}} 
+                        onScanQr={() => {}} 
+                        onSelectTask={setSelectedTask} 
+                        isLoading={isLoading} 
+                    />
                 </div>
             )}
        </div>
