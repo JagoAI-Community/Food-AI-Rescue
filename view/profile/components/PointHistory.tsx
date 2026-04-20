@@ -16,9 +16,10 @@ interface PointLog {
 interface PointHistoryProps {
     currentUser: UserData | null;
     onBack: () => void;
+    isEmbedded?: boolean;
 }
 
-export const PointHistory: React.FC<PointHistoryProps> = ({ currentUser, onBack }) => {
+export const PointHistory: React.FC<PointHistoryProps> = ({ currentUser, onBack, isEmbedded = false }) => {
     const [history, setHistory] = useState<PointLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -39,21 +40,23 @@ export const PointHistory: React.FC<PointHistoryProps> = ({ currentUser, onBack 
     }, [currentUser?.id]);
 
     return (
-        <div className="pb-32 animate-in slide-in-from-right-4 duration-500">
-            <header className="p-6 md:p-8 bg-white dark:bg-stone-950 border-b border-stone-100 dark:border-stone-900 sticky top-0 z-20 flex items-center gap-4">
-                <button 
-                    onClick={onBack}
-                    className="p-2 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-                >
-                    <ArrowLeft className="w-6 h-6 text-stone-900 dark:text-white" />
-                </button>
-                <div>
-                    <h2 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight italic">Riwayat Poin</h2>
-                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-0.5">Jejak kontribusi kebaikan Anda</p>
-                </div>
-            </header>
+        <div className={`${isEmbedded ? '' : 'pb-32'} animate-in slide-in-from-right-4 duration-500 ${isEmbedded ? 'bg-transparent' : ''}`}>
+            {!isEmbedded && (
+                <header className="p-6 md:p-8 bg-white dark:bg-stone-950 border-b border-stone-100 dark:border-stone-900 sticky top-0 z-20 flex items-center gap-4">
+                    <button 
+                        onClick={onBack}
+                        className="p-2 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                    >
+                        <ArrowLeft className="w-6 h-6 text-stone-900 dark:text-white" />
+                    </button>
+                    <div>
+                        <h2 className="text-xl font-black text-stone-900 dark:text-white uppercase tracking-tight italic">Riwayat Poin</h2>
+                        <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-0.5">Jejak kontribusi kebaikan Anda</p>
+                    </div>
+                </header>
+            )}
 
-            <div className="p-6 md:p-8 max-w-2xl mx-auto space-y-6">
+            <div className={`${isEmbedded ? 'p-0' : 'p-6 md:p-8'} max-w-4xl mx-auto space-y-6`}>
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20">
                         <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
@@ -103,7 +106,7 @@ export const PointHistory: React.FC<PointHistoryProps> = ({ currentUser, onBack 
             </div>
 
             {/* Gamification Tip */}
-            <div className="px-6 md:px-8 max-w-2xl mx-auto mt-8">
+            <div className="px-6 md:px-8 max-w-4xl mx-auto mt-8">
                 <div className="p-6 bg-gradient-to-br from-stone-900 to-stone-800 rounded-[2rem] text-white shadow-xl relative overflow-hidden">
                     <div className="relative z-10">
                         <Zap className="w-8 h-8 text-amber-400 mb-3" />

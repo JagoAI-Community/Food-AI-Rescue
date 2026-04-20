@@ -20,7 +20,10 @@ interface ReceiverIndexProps {
   isLoading?: boolean;
   onRefresh?: () => void;
   disableExpiryLogic?: boolean;
+  isReadOnly?: boolean;
+  notifications?: any[];
 }
+
 
 export const ReceiverIndex: React.FC<ReceiverIndexProps> = ({ 
   onOpenNotifications, 
@@ -33,8 +36,11 @@ export const ReceiverIndex: React.FC<ReceiverIndexProps> = ({
   currentUser,
   isLoading: isGlobalLoading = false, // Default to false if not provided
   onRefresh,
-  disableExpiryLogic = false
+  disableExpiryLogic = false,
+  isReadOnly = false,
+  notifications = []
 }) => {
+
   const [selectedItem, setSelectedItem] = useState<FoodItem | null>(null);
   const [showRequests, setShowRequests] = useState(false);
   const [showKitchenScanner, setShowKitchenScanner] = useState(false);
@@ -100,37 +106,19 @@ export const ReceiverIndex: React.FC<ReceiverIndexProps> = ({
                 onToggleSave={() => onToggleSave(selectedItem)}
                 claimHistory={claimHistory} 
                 currentUser={currentUser} 
+                isReadOnly={isReadOnly}
+                disableExpiryLogic={disableExpiryLogic}
             />
+
         ) : showKitchenScanner ? (
             <KitchenScanner 
                 currentUser={currentUser} 
                 onBack={() => setShowKitchenScanner(false)} 
+                initialTab="scan"
             />
         ) : (
             <>
-                {/* Kitchen Scanner Promo Widget */}
-                <div className="px-6 pt-8 max-w-5xl mx-auto">
-                    <div className="bg-stone-900 rounded-[2.5rem] p-6 shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-orange-600/20 rounded-full -mr-20 -mt-20 blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
-                        <div className="relative z-10 flex items-center justify-between">
-                            <div className="space-y-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/40">
-                                        <Sparkles className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Kitchen AI</span>
-                                </div>
-                                <h3 className="text-lg font-black text-white leading-tight">Sulap Sisa Makanan <br/> Jadi Masakan Lezat</h3>
-                            </div>
-                            <button 
-                                onClick={() => setShowKitchenScanner(true)}
-                                className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-stone-900 shadow-xl active:scale-90 transition-all"
-                            >
-                                <Utensils className="w-6 h-6" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                {/* Kitchen AI Promo removed as per user request */}
 
                 <FoodList 
                     onOpenNotifications={onOpenNotifications} 
@@ -142,6 +130,7 @@ export const ReceiverIndex: React.FC<ReceiverIndexProps> = ({
                     isLoading={isLoading}
                     onRefresh={onRefresh}
                     disableExpiryLogic={disableExpiryLogic}
+                    notifications={notifications}
                 />
             </>
         )}

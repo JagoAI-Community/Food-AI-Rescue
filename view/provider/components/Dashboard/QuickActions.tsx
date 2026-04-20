@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { AlertTriangle, Star, ShoppingBag } from 'lucide-react';
 
 interface QuickActionsProps {

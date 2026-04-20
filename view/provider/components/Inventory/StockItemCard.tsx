@@ -8,11 +8,12 @@ interface StockItemCardProps {
     item: FoodItem;
     layoutMode: 'list' | 'grid';
     onClick: () => void;
+    disableExpiryLogic?: boolean;
 }
 
-export const StockItemCard: React.FC<StockItemCardProps> = ({ item, layoutMode, onClick }) => {
+export const StockItemCard: React.FC<StockItemCardProps> = ({ item, layoutMode, onClick, disableExpiryLogic = false }) => {
     const expiryParts = getDateTimeParts(item.distributionEnd || item.expiryTime);
-    const expired = isFoodExpired(item.distributionEnd, item.expiryTime);
+    const expired = !disableExpiryLogic && (item.status === 'expired' || isFoodExpired(item.distributionEnd, item.expiryTime));
 
     return (
         <div 

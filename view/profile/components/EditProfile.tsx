@@ -232,7 +232,7 @@ export const EditProfile: React.FC<EditProfileProps> = ({ userData, onSave, addr
     };
 
     return (
-        <div className="max-w-md mx-auto bg-white dark:bg-stone-900 rounded-2xl p-8 border border-stone-200 dark:border-stone-800 shadow-sm space-y-8 animate-in fade-in">
+        <div className="max-w-2xl mx-auto bg-white dark:bg-stone-900 rounded-2xl p-8 border border-stone-200 dark:border-stone-800 shadow-sm space-y-8 animate-in fade-in">
             <div className="flex flex-col items-center">
                 <div className="w-28 h-28 rounded-full bg-stone-800 relative mb-4 ring-4 ring-orange-50 dark:ring-stone-800 group overflow-hidden">
                     <img src={form.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${form.name}`} className="w-full h-full rounded-full object-cover" alt="avatar" />

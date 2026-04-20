@@ -17,6 +17,7 @@ export interface UserData {
   password?: string;
   isNewUser?: boolean; // Field baru: true (1) = tampilkan tour, false (0) = sembunyikan
   selected_badge_id?: number | string;
+  actor?: { id: string; name: string };
 }
 
 export interface ImpactBreakdownItem {
@@ -260,8 +261,7 @@ export interface Report {
   category?: string;
   priority?: 'high' | 'medium';
   type?: string;
-  evidenceUrl?: string;
-  title?: string;
+  evidenceUrl?: string | string[];
 }
 
 export interface DistributionTask {
@@ -345,7 +345,7 @@ export interface ProviderOrder {
     report?: {
         issue: string;
         description: string;
-        evidenceUrl?: string;
+        evidenceUrl?: string | string[];
         isUrgent: boolean;
     };
     impact?: {

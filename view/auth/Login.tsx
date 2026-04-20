@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Mail, Lock, Truck, ArrowRight, Quote as QuoteIcon, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Truck, ArrowRight, Quote as QuoteIcon, AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { LOGIN_QUOTES } from '../../constants';
@@ -9,7 +9,7 @@ import { db } from '../../services/db';
 
 interface LoginViewProps {
   onLogin: (data: { role: UserRole; email?: string; name?: string; id?: string; phone?: string; points?: number; status?: string; address?: string }, remember: boolean) => void;
-  onNavigate: (view: 'login' | 'register' | 'forgot-password') => void;
+  onNavigate: (view: 'login' | 'register' | 'forgot-password' | 'landing') => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLogin, onNavigate }) => {
@@ -116,6 +116,17 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, onNavigate }) => 
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-5/12 flex items-center justify-center p-6 lg:p-16 relative z-10 bg-white/80 backdrop-blur-3xl border-l border-stone-200 h-full overflow-y-auto">
           
+          {/* Back Button */}
+          <button 
+            onClick={() => onNavigate('landing')}
+            className="absolute top-8 left-8 flex items-center gap-2 text-stone-400 hover:text-orange-600 transition-all font-black uppercase tracking-widest text-[10px] group"
+          >
+            <div className="w-8 h-8 rounded-full border border-stone-100 flex items-center justify-center group-hover:border-orange-500 group-hover:bg-orange-50 transition-all">
+                <ArrowLeft className="w-4 h-4" />
+            </div>
+            <span>Kembali</span>
+          </button>
+
           <div className="w-full max-w-[420px] space-y-10 relative z-20">
              
              <div className="text-center lg:text-left mb-8">

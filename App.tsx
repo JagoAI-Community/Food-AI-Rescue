@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { UserRole, FoodItem, ClaimHistoryItem, SavedItem, UserData, FAQItem, SocialImpactData, BroadcastMessage, Address } from './types';
 import { isFoodExpired } from './utils/transformers';
+import { checkAndExpireItems } from './utils/expiryChecker';
 import { LoginView } from './view/auth/Login';
 import { RegisterView } from './view/auth/Register';
 import { ForgotPasswordView } from './view/auth/ForgotPassword';
@@ -17,13 +18,17 @@ import { getSocialSystem } from './utils/socialSystem';
 import { ReviewsView } from './view/provider/components/Reviews';
 import { VerificationPendingModal } from './view/common/VerificationPendingModal'; 
 import { VerificationRejectedModal } from './view/common/VerificationRejectedModal';
+import { Sidebar } from './view/common/Sidebar';
 import { Home, User, Box, Loader2, History } from 'lucide-react';
 import { db } from './services/db';
+import { MaintenancePage } from './view/common/MaintenancePage';
+import { LandingPage } from './view/landing/LandingPage';
+
 
 const CACHE_EXPIRY_MS = 10 * 60 * 1000; // 10 Minutes
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<string>('login');
+  const [currentView, setCurrentView] = useState<string>('landing');
   const [role, setRole] = useState<UserRole>(null);
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
@@ -56,8 +61,31 @@ const App: React.FC = () => {
       { id: 'f2', question: 'Bagaimana cara kerja sistem reputasi (poin)?', answer: 'Sistem reputasi dihitung berdasarkan keaktifan dan integritas Anda:\n- **Donatur:** Mendapat poin dari jumlah makanan yang diselamatkan dan rating ulasan.\n- **Penerima:** Mendapat poin dari ulasan yang diberikan dan ketepatan waktu penukaran.\n- **Relawan:** Mendapat poin dari jarak tempuh dan keberhasilan misi.', category: 'Umum' }
   ]);
 
-  // Global App Settings from Backend
-  const [appSettings, setAppSettings] = useState<{ disableExpiryLogic: boolean }>({ disableExpiryLogic: false });
+  const [appSettings, setAppSettings] = useState<{ 
+      appName?: string;
+      appSlogan?: string;
+      supportPhone?: string;
+      disableExpiryLogic: boolean;
+      maintenance: boolean;
+      disable_signup: boolean;
+      readonly_mode: boolean;
+      [key: string]: any;
+  }>({ 
+      appName: 'Food AI Rescue',
+      appSlogan: 'Selamatkan Makanan, Selamatkan Bumi',
+      supportPhone: '628123456789',
+      disableExpiryLogic: false,
+      maintenance: false,
+      disable_signup: false,
+      readonly_mode: false
+  });
+
+  // Dynamically update document title based on App Name
+  useEffect(() => {
+      document.title = appSettings.appName || 'Food AI Rescue';
+  }, [appSettings.appName]);
+
+
   const [rankLevels, setRankLevels] = useState<any[]>([]);
 
   // --- SESSION CHECK ON MOUNT ---
@@ -173,8 +201,21 @@ const App: React.FC = () => {
                 currentUser?.id ? db.getUser(currentUser.id) : Promise.resolve(null)
             ]);
 
-            if (settingsData) setAppSettings(settingsData);
-            if (inventoryData) setFoodItems(inventoryData);
+            if (settingsData) {
+                const normalizedSettings = {
+                    ...settingsData,
+                    disableExpiryLogic: settingsData.disableExpiryLogic || settingsData.disable_expiry_logic || false
+                };
+                setAppSettings(normalizedSettings);
+            }
+            if (inventoryData) {
+                const isBypass = settingsData?.disableExpiryLogic || settingsData?.disable_expiry_logic;
+                const rawItems = Array.isArray(inventoryData) ? inventoryData : [];
+                const processed = isBypass 
+                    ? rawItems 
+                    : await checkAndExpireItems(rawItems);
+                setFoodItems(processed);
+            }
             if (faqData) setGlobalFAQs(faqData);
             
             // Sync current user status if changed (e.g. Activated by Admin)
@@ -545,12 +586,18 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
+      if (currentView === 'landing') return <LandingPage onNavigate={setCurrentView} />;
       if (currentView === 'login') return <LoginView onLogin={handleLogin} onNavigate={setCurrentView as any} />;
-      if (currentView === 'register') return <RegisterView onNavigate={setCurrentView as any} onRegister={handleRegister} />;
+      if (currentView === 'register') return <RegisterView onNavigate={setCurrentView as any} onRegister={handleRegister} disableSignup={appSettings.disable_signup} />;
       if (currentView === 'forgot-password') return <ForgotPasswordView onNavigate={setCurrentView as any} />;
       
       // CHECK ACCOUNT STATUS HERE
       if (currentUser && role !== 'admin' && role !== 'super_admin') {
+          // Intercept for Maintenance Mode (only bypass if logged in as admin)
+          if (appSettings?.maintenance && role !== 'admin' && role !== 'super_admin') {
+              return <MaintenancePage appSettings={appSettings} />;
+          }
+
           if (currentUser.status?.toUpperCase() === 'SUSPENDED') {
               return <VerificationRejectedModal onLogout={handleLogout} userName={currentUser.name} />;
           }
@@ -558,6 +605,7 @@ const App: React.FC = () => {
               return <VerificationPendingModal onLogout={handleLogout} onRefresh={() => fetchData(true)} userName={currentUser.name} />;
           }
       }
+
 
       if (isGlobalLoading && !foodItems.length && role !== 'recipient' && role !== 'volunteer') {
           return (
@@ -628,8 +676,11 @@ const App: React.FC = () => {
                         setCurrentView(view);
                     }
                 }} 
+                isReadOnly={appSettings.readonly_mode}
+                disableExpiryLogic={appSettings.disableExpiryLogic}
             />
           );
+
 
           if (currentView === 'reports') return (
               <div className="p-6 md:p-8 max-w-5xl mx-auto pb-32">
@@ -674,15 +725,18 @@ const App: React.FC = () => {
                 notifications={userNotifications}
                 onRefresh={() => fetchData(true)}
                 socialSystem={socialSystem}
+                disableExpiryLogic={appSettings?.disableExpiryLogic}
             />
           );
       }
 
-      if (role === 'recipient') {
+      if (role?.toLowerCase() === 'recipient') {
           // Filter out expired items for receivers, unless disabled by admin
-          const activeFoodItems = appSettings.disableExpiryLogic 
-              ? foodItems 
-              : foodItems.filter(item => !isFoodExpired(item.distributionEnd, item.expiryTime));
+          const isBypassActive = appSettings?.disableExpiryLogic || (appSettings as any)?.disable_expiry_logic;
+          
+          const activeFoodItems = isBypassActive 
+              ? foodItems.filter(item => (item.currentQuantity ?? 0) > 0 && item.status?.toLowerCase() !== 'completed' && item.status?.toLowerCase() !== 'claimed')
+              : foodItems.filter(item => (item.status?.toLowerCase() === 'available' || !item.status) && !isFoodExpired(item.distributionEnd, item.expiryTime));
           
           return (
             <ReceiverIndex 
@@ -691,6 +745,8 @@ const App: React.FC = () => {
                 foodItems={activeFoodItems}
                 savedItems={savedItems}
                 disableExpiryLogic={appSettings.disableExpiryLogic}
+                isReadOnly={appSettings.readonly_mode}
+
                 onToggleSave={(item) => {
                     if (savedItems.some(s => s.id === item.id)) {
                         setSavedItems(savedItems.filter(s => s.id !== item.id));
@@ -740,7 +796,7 @@ const App: React.FC = () => {
                 globalClaims={claimHistory}
                 globalFAQs={globalFAQs} 
                 setGlobalFAQs={setGlobalFAQs} 
-                broadcastMessages={userNotifications.filter(n => n.id.includes('broadcast'))}
+                broadcastMessages={userNotifications.filter(n => String(n.id).includes('broadcast'))}
                 setBroadcastMessages={setUserNotifications as any}
                 allAddresses={allAddresses}
                 socialSystem={socialSystem}
@@ -754,16 +810,37 @@ const App: React.FC = () => {
       return <div>Unknown Role</div>;
   };
 
-  const showBottomNav = role && !['login', 'register', 'forgot-password'].includes(currentView) && !role.includes('admin') && currentUser?.status?.toUpperCase() === 'ACTIVE';
+  const showNavigation = role && !['login', 'register', 'forgot-password'].includes(currentView) && !role.includes('admin') && currentUser?.status?.toUpperCase() === 'ACTIVE';
+  const showBottomNav = showNavigation;
+  const showSidebar = showNavigation;
 
   return (
-    <div className="bg-[#FDFBF7] dark:bg-stone-950 min-h-screen text-stone-900 dark:text-white font-sans flex flex-col">
-      <div className="flex-1">
-        {renderContent()}
-      </div>
+    <div className="bg-[#FDFBF7] dark:bg-stone-950 min-h-screen text-stone-900 dark:text-white font-sans flex flex-col md:flex-row">
+      {showSidebar && (
+          <Sidebar 
+            currentView={currentView}
+            setCurrentView={setCurrentView}
+            profileInitialTab={profileInitialTab}
+            setProfileInitialTab={setProfileInitialTab as any}
+            role={role}
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            notificationsCount={userNotifications.filter(n => !n.isRead).length}
+            appSettings={appSettings}
+          />
+      )}
+
       
-      {showBottomNav && (
-          <nav className="sticky bottom-0 left-0 right-0 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 flex justify-around py-3.5 z-50 shadow-[0_-5px_15px_rgba(0,0,0,0.03)] safe-area-bottom">
+      <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+        <main className="flex-1 overflow-y-auto custom-scrollbar">
+          <div key={currentView} className="animate-view-enter">
+            {renderContent()}
+          </div>
+        </main>
+        
+        {showBottomNav && (
+            <nav className="md:hidden sticky bottom-0 left-0 right-0 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-t border-stone-200 dark:border-stone-800 flex justify-around py-3.5 z-50 shadow-[0_-5px_15px_rgba(0,0,0,0.03)] safe-area-bottom">
+
               <button 
                 onClick={() => { setProfileInitialTab('main'); setCurrentView('dashboard'); }} 
                 className={`flex flex-col items-center gap-1.5 transition-all active:scale-90 ${currentView === 'dashboard' ? 'text-orange-600' : 'text-stone-400'}`}
@@ -799,8 +876,9 @@ const App: React.FC = () => {
                   <User className={`w-5 h-5 ${currentView === 'profile' && profileInitialTab !== 'history' ? 'fill-orange-600/10' : ''}`} />
                   <span className="text-[10px] font-black uppercase tracking-widest">Profil</span>
               </button>
-          </nav>
-      )}
+            </nav>
+        )}
+      </div>
     </div>
   );
 };

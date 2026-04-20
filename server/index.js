@@ -21,7 +21,32 @@ app.use(bodyParser.json({ limit: '50mb' }));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // --- GLOBAL STATE ---
-let appSettings = { disableExpiryLogic: false };
+let appSettings = { 
+    appName: 'Food AI Rescue',
+    appSlogan: 'Selamatkan Makanan, Selamatkan Bumi',
+    supportPhone: '628123456789',
+    pointsPerKg: 100,
+    co2Multiplier: 2.5,
+    disableExpiryLogic: false,
+    maintenance: false,
+    disable_signup: false,
+    readonly_mode: false
+};
+
+
+async function loadAppSettings() {
+    try {
+        const [rows] = await db.query('SELECT setting_key, setting_value FROM system_settings');
+        rows.forEach(row => {
+            const val = row.setting_value === 'true' ? true : row.setting_value === 'false' ? false : row.setting_value;
+            appSettings[row.setting_key] = val;
+        });
+        console.log('[CONFIG] Settings loaded from DB:', appSettings);
+    } catch (err) {
+        console.error('[CONFIG-ERROR] Failed to load settings:', err);
+    }
+}
+
 
 // --- HELPER: Action Router ---
 // Mirrored from GAS doPost structure to make it easy to refactor frontend db.ts
@@ -105,10 +130,21 @@ app.post('/api', async (req, res) => {
             
             case 'GET_SETTINGS': result = appSettings; break;
             case 'UPDATE_SETTINGS': 
-                appSettings = { ...appSettings, ...(data.settings || data) };
-                await logAction(data.actor?.id, data.actor?.name, 'Update Settings', `Ubah pengaturan sistem: ${Object.keys(data.settings || data).join(', ')}`);
+                const newSettings = data.settings || data;
+                appSettings = { ...appSettings, ...newSettings };
+                
+                // Persist to DB
+                for (const [key, val] of Object.entries(newSettings)) {
+                    await db.query(
+                        'INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?',
+                        [key, String(val), String(val)]
+                    );
+                }
+
+                await logAction(data.actor?.id, data.actor?.name, 'Update Settings', `Ubah pengaturan sistem: ${Object.keys(newSettings).join(', ')}`);
                 result = appSettings; 
                 break;
+
 
             case 'GET_SOCIAL_IMPACT': result = await getSocialImpact(data.userId); break;
             case 'GET_IMPACT_CHART': result = await getImpactChart(data.userId, data.period); break;
@@ -939,8 +975,9 @@ async function verifyOrderQR(data) {
 
     // 2. Add points for the person who did the scanning (Handover Point)
     // For now, if scannedByProviderName is provided, we use the provider_id from the claim
-    // Or we could pass actorId in data.
-    const pointsData = await addPoints(scannerId, 50, 'QR Handover - Serah Terima Makanan', rows[0].id);
+    // Give points to the scanner (e.g. Volunteer) based on system settings
+    const pointsAmount = appSettings.pointsPerTrx ? parseInt(appSettings.pointsPerTrx) : 50;
+    const pointsData = await addPoints(scannerId, pointsAmount, 'QR Handover - Serah Terima Makanan', rows[0].id);
 
     return { 
         success: true, 
@@ -1905,6 +1942,7 @@ async function getSocialImpact(userId) {
     return impact;
 }
 
-app.listen(port, () => {
+app.listen(port, async () => {
     console.log(`Server running on port ${port}`);
+    await loadAppSettings();
 });

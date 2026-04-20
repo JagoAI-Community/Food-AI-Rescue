@@ -9,9 +9,11 @@ import { db } from '../../services/db';
 interface RegisterViewProps {
   onNavigate: (view: 'login' | 'register' | 'forgot-password') => void;
   onRegister: (formData: any, remember: boolean) => void;
+  disableSignup?: boolean;
 }
 
-export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate, onRegister }) => {
+
+export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate, onRegister, disableSignup }) => {
   const [step, setStep] = useState<'role' | 'form'>('role');
   const [selectedRole, setSelectedRole] = useState<UserRole>('recipient');
   const [showPass, setShowPass] = useState({ pass: false, confirm: false });
@@ -161,7 +163,23 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onNavigate, onRegist
       <div className="w-full lg:w-6/12 flex items-start lg:items-center justify-center p-6 relative z-10 bg-white/80 backdrop-blur-xl border-l border-stone-200 h-full overflow-y-auto">
           <div className="w-full max-w-[480px] py-8 lg:py-10 relative z-20">
              
-             {step === 'role' ? (
+             {disableSignup ? (
+                <div className="animate-in fade-in zoom-in duration-500 text-center space-y-6">
+                    <div className="w-20 h-20 bg-orange-100 rounded-3xl flex items-center justify-center mx-auto mb-8 animate-bounce duration-[3s]">
+                        <Lock className="w-10 h-10 text-orange-600" />
+                    </div>
+                    <h2 className="text-3xl font-black text-stone-900 tracking-tighter italic">PENDAFTARAN DITUTUP</h2>
+                    <p className="text-stone-500 font-medium leading-relaxed">
+                        Mohon maaf, saat ini kami sedang membatasi jumlah pengguna baru untuk optimalisasi sistem. Silakan hubungi admin atau coba lagi nanti.
+                    </p>
+                    <div className="pt-8">
+                        <Button onClick={() => onNavigate('login')} variant="primary" className="w-full">
+                            Kembali ke Login
+                        </Button>
+                    </div>
+                </div>
+             ) : step === 'role' ? (
+
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {/* Mobile Back Button */}
                     <div className="lg:hidden mb-6">

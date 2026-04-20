@@ -66,7 +66,7 @@ export const SecuritySettings: React.FC = () => {
 
     return (
         <div className="p-6 bg-[#FDFBF7] dark:bg-stone-950 min-h-screen animate-in fade-in">
-            <div className="max-w-lg mx-auto space-y-6">
+            <div className="max-w-2xl mx-auto space-y-6">
                 {/* Change Password Section */}
                 <div className="bg-white dark:bg-stone-900 rounded-2xl p-6 border border-stone-200 dark:border-stone-800 shadow-sm">
                     <h3 className="font-bold text-lg text-stone-900 dark:text-white mb-4 flex items-center gap-2">

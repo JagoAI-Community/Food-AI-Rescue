@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Bell, CheckCircle, Info, AlertTriangle, ArrowLeft, Megaphone, Sparkles, Package, Truck, Star, XCircle, PlayCircle } from 'lucide-react';
 import { Notification, UserRole, ClaimHistoryItem, BroadcastMessage, FoodItem } from '../../types';
 import { getDateTimeParts } from '../../utils/transformers';
@@ -15,6 +15,18 @@ interface NotificationsPageProps {
 }
 
 export const NotificationsPage: React.FC<NotificationsPageProps> = ({ role, onBack, userName, notifications = [], currentUserId, onRefresh }) => {
+  
+  useEffect(() => {
+    const unread = notifications.filter(notif => !notif.isRead);
+    if (unread.length > 0 && currentUserId) {
+      // Mark all unread as read
+      Promise.all(unread.map(n => db.markNotificationRead(currentUserId, String(n.id))))
+        .then(() => {
+          if (onRefresh) onRefresh();
+        })
+        .catch(err => console.error("Auto mark read failed:", err));
+    }
+  }, [currentUserId, notifications.length]); 
   
   const handleMarkAsRead = async (notifId: string) => {
     if (!currentUserId || !onRefresh) return;

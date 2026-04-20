@@ -65,7 +65,7 @@ export const RanksManagement = () => {
     const handleDeleteLevel = async (id: number) => {
         if (!window.confirm("Hapus level ini? Tindakan ini tidak dapat dibatalkan.")) return;
         try {
-            await db.deleteRankLevel(id, null);
+            await db.deleteRankLevel(id.toString(), null);
             fetchData();
         } catch (error) {
             alert("Gagal menghapus level.");

@@ -11,9 +11,10 @@ interface ProductDetailModalProps {
     onClose: () => void;
     onUpdate?: (updatedItem: FoodItem) => void;
     onDelete?: (id: string) => void;
+    disableExpiryLogic?: boolean;
 }
 
-export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product: p, onClose, onUpdate, onDelete }) => {
+export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product: p, onClose, onUpdate, onDelete, disableExpiryLogic = false }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -25,7 +26,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product:
     const [activeCalcTab, setActiveCalcTab] = useState<'co2' | 'social'>('co2');
 
     const progressPercent = (p.currentQuantity / p.initialQuantity) * 100;
-    const expired = isFoodExpired(p.distributionEnd, p.expiryTime);
+    const expired = !disableExpiryLogic && (p.status === 'expired' || isFoodExpired(p.distributionEnd, p.expiryTime));
 
     useEffect(() => {
         setFormData(p);

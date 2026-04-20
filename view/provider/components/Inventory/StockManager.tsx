@@ -24,7 +24,10 @@ interface StockManagerProps {
     isLoading?: boolean;
     onRefresh?: () => void;
     onNavigate: (view: string) => void;
+    isReadOnly?: boolean;
+    disableExpiryLogic?: boolean;
 }
+
 
 export const StockManager: React.FC<StockManagerProps> = ({ 
     foodItems, 
@@ -34,7 +37,9 @@ export const StockManager: React.FC<StockManagerProps> = ({
     currentUser, 
     isLoading: isParentLoading,
     onRefresh: onParentRefresh,
-    onNavigate
+    onNavigate,
+    isReadOnly = false,
+    disableExpiryLogic = false
 }) => {
     const [isAddingNew, setIsAddingNew] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<FoodItem | null>(null);
@@ -90,7 +95,9 @@ export const StockManager: React.FC<StockManagerProps> = ({
             ]);
 
             if (inventoryData && Array.isArray(inventoryData)) {
-                const processedInventory = await checkAndExpireItems(inventoryData);
+                const processedInventory = disableExpiryLogic 
+                    ? inventoryData 
+                    : await checkAndExpireItems(inventoryData);
                 setFoodItems(processedInventory);
                 // Save to Cache with TIMESTAMP
                 localStorage.setItem(cacheKey, JSON.stringify({ 
@@ -202,6 +209,7 @@ export const StockManager: React.FC<StockManagerProps> = ({
                 onClose={() => setSelectedProduct(null)} 
                 onUpdate={handleUpdateItem}
                 onDelete={handleDeleteItem}
+                disableExpiryLogic={disableExpiryLogic}
             />
         );
     }
@@ -246,21 +254,24 @@ export const StockManager: React.FC<StockManagerProps> = ({
 
                     <Button 
                         onClick={() => setIsAddingNew(true)}
-                        disabled={hasAddress === false || showLoading}
+                        disabled={hasAddress === false || showLoading || isReadOnly}
                         className={`w-full h-14 font-black uppercase tracking-widest rounded-2xl border-0 transition-all ${
-                            (hasAddress === false || showLoading)
+                            (hasAddress === false || showLoading || isReadOnly)
                             ? 'bg-stone-200 dark:bg-stone-800 text-stone-400 cursor-not-allowed shadow-none' 
                             : 'bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white shadow-xl shadow-orange-500/30 active:scale-[0.98]'
                         }`}
                     >
                         {showLoading ? (
                             <span className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> MEMERIKSA DATA...</span>
+                        ) : isReadOnly ? (
+                            <span className="flex items-center gap-2"><Lock className="w-5 h-5" /> MODE BACA SAJA</span>
                         ) : hasAddress === false ? (
                             <span className="flex items-center gap-2"><Lock className="w-5 h-5" /> FITUR TERKUNCI</span>
                         ) : (
                             <span className="flex items-center gap-2"><Plus className="w-6 h-6" /> TAMBAH DONASI</span>
                         )}
                     </Button>
+
                 </div>
 
                 <div className="flex bg-stone-100 dark:bg-stone-900 p-1.5 rounded-2xl w-full border border-stone-200 dark:border-stone-800">
@@ -311,6 +322,7 @@ export const StockManager: React.FC<StockManagerProps> = ({
                                 item={item} 
                                 layoutMode={layoutMode} 
                                 onClick={() => setSelectedProduct(item)} 
+                                disableExpiryLogic={disableExpiryLogic}
                             />
                         ))}
                     </div>

@@ -17,9 +17,13 @@ interface FoodDetailProps {
   onToggleSave: () => void;
   claimHistory?: ClaimHistoryItem[];
   currentUser?: UserData | null;
+  isReadOnly?: boolean;
+  disableExpiryLogic?: boolean;
 }
 
-export const FoodDetail: React.FC<FoodDetailProps> = ({ item, onBack, onClaim, isSaved, onToggleSave, claimHistory = [], currentUser }) => {
+
+export const FoodDetail: React.FC<FoodDetailProps> = ({ item, onBack, onClaim, isSaved, onToggleSave, claimHistory = [], currentUser, isReadOnly = false, disableExpiryLogic = false }) => {
+
   // LOGIKA ADAPTIF PORSI
   const stockAvailable = item.currentQuantity;
   const standardMin = item.minQuantity || 1;
@@ -41,7 +45,7 @@ export const FoodDetail: React.FC<FoodDetailProps> = ({ item, onBack, onClaim, i
   const [hasAddress, setHasAddress] = useState<boolean | null>(null);
   const [isLoadingAddress, setIsLoadingAddress] = useState(true);
 
-  const expired = isFoodExpired(item.distributionEnd, item.expiryTime);
+  const expired = !disableExpiryLogic && (item.status === 'expired' || isFoodExpired(item.distributionEnd, item.expiryTime));
 
   // Check status
   const isThisItemActive = claimHistory.some(c => 
@@ -76,10 +80,11 @@ export const FoodDetail: React.FC<FoodDetailProps> = ({ item, onBack, onClaim, i
       else setSelectedMethod('pickup');
   }, [item, minAllowed, stockAvailable]);
 
-  const handleClaimClick = () => {
-    if (isThisItemActive || !hasAddress || isOutOfStock) return;
+   const handleClaimClick = () => {
+    if (isThisItemActive || !hasAddress || isOutOfStock || isReadOnly) return;
     setShowConfirmModal(true);
   };
+
 
   const confirmClaim = async () => {
     setShowConfirmModal(false);
@@ -261,15 +266,16 @@ export const FoodDetail: React.FC<FoodDetailProps> = ({ item, onBack, onClaim, i
                     <Button 
                         onClick={handleClaimClick} 
                         isLoading={isClaiming} 
-                        disabled={isOutOfStock || isThisItemActive || hasAddress === false || isLoadingAddress}
+                        disabled={isOutOfStock || isThisItemActive || hasAddress === false || isLoadingAddress || isReadOnly}
                         className={`h-14 flex-1 text-base rounded-2xl shadow-xl font-black tracking-widest uppercase border-0 ${
-                            (isOutOfStock || isThisItemActive || hasAddress === false || isLoadingAddress)
+                            (isOutOfStock || isThisItemActive || hasAddress === false || isLoadingAddress || isReadOnly)
                             ? 'bg-stone-200 dark:bg-stone-800 text-stone-400 cursor-not-allowed shadow-none grayscale' 
                             : 'bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-orange-500/30'
                         }`}
                     >
-                        {isOutOfStock ? 'STOK HABIS' : isLoadingAddress ? 'MEMERIKSA DATA...' : hasAddress === false ? 'LENGKAPI ALAMAT' : isThisItemActive ? 'SUDAH DIKLAIM' : 'KLAIM SEKARANG'}
+                        {isOutOfStock ? 'STOK HABIS' : isLoadingAddress ? 'MEMERIKSA DATA...' : isReadOnly ? 'MODE BACA SAJA' : hasAddress === false ? 'LENGKAPI ALAMAT' : isThisItemActive ? 'SUDAH DIKLAIM' : 'KLAIM SEKARANG'}
                     </Button>
+
                 </div>
             </div>
         </div>

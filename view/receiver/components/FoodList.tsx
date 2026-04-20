@@ -17,6 +17,7 @@ interface FoodListProps {
   isLoading?: boolean;
   onRefresh?: () => void;
   disableExpiryLogic?: boolean;
+  notifications?: any[];
 }
 
 export const FoodList: React.FC<FoodListProps> = ({ 
@@ -28,7 +29,8 @@ export const FoodList: React.FC<FoodListProps> = ({
   onToggleSave,
   isLoading,
   onRefresh,
-  disableExpiryLogic = false
+  disableExpiryLogic = false,
+  notifications = []
 }) => {
   const [filterMethod, setFilterMethod] = useState<'all' | 'pickup' | 'delivery'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,8 +47,8 @@ export const FoodList: React.FC<FoodListProps> = ({
       
       // Real-time expiry check (bypassed if disableExpiryLogic is true)
       const isNotExpired = disableExpiryLogic 
-          ? true 
-          : (item.status === 'available' && (item.expiryTime ? new Date(item.expiryTime) > new Date() : true));
+          ? ((item.currentQuantity ?? 0) > 0 && item.status?.toLowerCase() !== 'completed' && item.status?.toLowerCase() !== 'claimed')
+          : ((item.status?.toLowerCase() === 'available' || !item.status) && (item.expiryTime ? new Date(item.expiryTime) > new Date() : true));
       
       return matchesMethod && matchesSearch && isNotExpired;
     })
@@ -109,9 +111,12 @@ export const FoodList: React.FC<FoodListProps> = ({
             </button>
             <button 
                 onClick={onOpenNotifications} 
-                className="p-3 text-stone-500 hover:text-orange-500 transition-colors bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-stone-200 dark:border-stone-800"
+                className="relative p-3 text-stone-500 hover:text-orange-500 transition-all bg-white dark:bg-stone-900 rounded-2xl shadow-sm border border-stone-200 dark:border-stone-800 active:scale-95 group"
             >
                 <Bell className="w-6 h-6" />
+                {notifications.filter(n => !n.isRead).length > 0 && (
+                    <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-orange-600 border-2 border-white dark:border-stone-900 rounded-full animate-pulse shadow-sm"></span>
+                )}
             </button>
         </div>
       </header>

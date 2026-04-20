@@ -47,18 +47,21 @@ interface ProfileIndexProps {
   socialSystem?: any;
 }
 
-const MenuButton = ({ icon: Icon, label, onClick, last }: any) => (
+const MenuButton = ({ icon: Icon, label, subtitle, onClick, last }: any) => (
     <button 
         onClick={onClick}
-        className={`w-full flex items-center justify-between p-4 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors ${!last ? 'border-b border-stone-100 dark:border-stone-800' : ''}`}
+        className={`w-full flex items-center justify-between p-4 lg:p-5 hover:bg-stone-50 dark:hover:bg-stone-800/60 transition-all duration-200 group ${!last ? 'border-b border-stone-100 dark:border-stone-800' : ''}`}
     >
-        <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-950 flex items-center justify-center text-stone-500 dark:text-stone-400">
-                <Icon className="w-4 h-4" />
+        <div className="flex items-center gap-3 lg:gap-4">
+            <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/20 group-hover:text-orange-600 transition-colors">
+                <Icon className="w-4 h-4 lg:w-5 lg:h-5" />
             </div>
-            <span className="text-stone-900 dark:text-stone-200 text-sm font-medium">{label}</span>
+            <div className="text-left">
+                <span className="text-stone-900 dark:text-stone-200 text-sm font-semibold block">{label}</span>
+                {subtitle && <span className="text-[10px] text-stone-400 font-medium hidden lg:block">{subtitle}</span>}
+            </div>
         </div>
-        <ChevronRight className="w-4 h-4 text-stone-400" />
+        <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-orange-500 group-hover:translate-x-0.5 transition-all" />
     </button>
 );
 
@@ -300,7 +303,7 @@ export const ProfileIndex: React.FC<ProfileIndexProps> = ({
 
     if (currentView === 'address') {
         return (
-            <div className="pb-32">
+            <div className="pb-32 animate-view-enter">
                 <div className="flex items-center gap-4 p-4 md:p-8 bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800 sticky top-0 z-10">
                     <button onClick={() => setCurrentView('main')} className="p-2 rounded-full hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
                         <ArrowLeft className="w-6 h-6 text-stone-900 dark:text-white" />
@@ -347,15 +350,9 @@ export const ProfileIndex: React.FC<ProfileIndexProps> = ({
         );
     }
 
-    if (currentView === 'point_history') {
-        return (
-            <PointHistory 
-                currentUser={userData} 
-                onBack={() => setCurrentView('main')} 
-            />
-        );
-    }
-
+    // Point History will be handled responsively in the main render
+    // no early return here anymore as it is handled by the responsive wrapper at the end
+    
     if (currentView === 'ai_settings' && userData) {
         return (
             <div className="p-4 md:p-8 pb-32">
@@ -498,62 +495,129 @@ export const ProfileIndex: React.FC<ProfileIndexProps> = ({
 
     return (
         <div className="pb-32 animate-in fade-in">
-            {userData && (
-                <ProfileHeader 
-                    userData={userData} 
-                    role={role} 
-                    bannerImage={null} 
-                    onEditBanner={() => {}} 
-                    onEditAvatar={onEditAvatar || (() => {})} 
-                    stats={stats}
-                    onUpdateUser={handleUpdateUser}
-                    socialSystem={socialSystem}
-                />
+            {/* MOBILE ONLY POINT HISTORY VIEW */}
+            {currentView === 'point_history' && (
+                <div className="lg:hidden animate-view-enter">
+                    <PointHistory 
+                        currentUser={userData} 
+                        onBack={() => setCurrentView('main')} 
+                    />
+                </div>
             )}
 
-            <div className="mt-8 px-4 space-y-6 max-w-lg mx-auto">
-                {/* Gamification Widget */}
-                <GamificationSummary 
-                    currentUser={userData} 
-                    currentPoints={typeof stats?.value3 === 'number' ? stats.value3 : 0} 
-                    onViewHistory={() => setCurrentView('point_history')}
-                />
-
-                <div className="space-y-3">
-                {role === 'recipient' && (
-                    <>
-                        <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-2 ml-2">Aktivitas</h3>
-                        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden shadow-sm">
-                            <MenuButton icon={Heart} label="Makanan Tersimpan" onClick={() => setCurrentView('saved')} last />
+            {/* MAIN DASHBOARD LAYOUT (Hidden on mobile if viewing point history) */}
+            <div className={`${currentView === 'point_history' ? 'hidden lg:block' : ''} animate-perspective-enter`}>
+                {/* FULL-WIDTH PROFILE HEADER */}
+                <div className="max-w-6xl mx-auto lg:px-8">
+                    {userData && (
+                        <div className="lg:mt-8 lg:rounded-[2rem] lg:overflow-hidden lg:border lg:border-stone-200 dark:lg:border-stone-800 lg:shadow-lg">
+                            <ProfileHeader 
+                                userData={userData} 
+                                role={role} 
+                                bannerImage={null} 
+                                onEditBanner={() => {}} 
+                                onEditAvatar={onEditAvatar || (() => {})} 
+                                stats={stats}
+                                onUpdateUser={handleUpdateUser}
+                                socialSystem={socialSystem}
+                            />
                         </div>
-                    </>
-                )}
-
-                <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-2 mt-6 ml-2">Akun</h3>
-                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden shadow-sm">
-                    <MenuButton icon={User} label="Edit Profil" onClick={() => setCurrentView('edit')} />
-                    {role !== 'volunteer' && (
-                        <MenuButton icon={MapPin} label="Alamat Tersimpan" onClick={() => setCurrentView('address')} />
                     )}
-                    <MenuButton icon={Shield} label="Keamanan & Privasi" onClick={() => setCurrentView('security')} />
-                    {role !== 'volunteer' && (
-                        <MenuButton icon={Sparkles} label="Pengaturan API AI" onClick={() => setCurrentView('ai_settings')} />
-                    )}
-                    <button onClick={toggleTheme} className="w-full flex items-center justify-between p-4 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors border-b border-stone-100 dark:border-stone-800">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-950 flex items-center justify-center text-stone-500 dark:text-stone-400">{isDarkMode ? <Moon className="w-4 h-4 text-orange-400" /> : <Sun className="w-4 h-4 text-orange-500" />}</div>
-                            <span className="text-stone-900 dark:text-stone-200 text-sm font-medium">Tema Aplikasi</span>
-                        </div>
-                        <span className="text-xs text-stone-500 mr-2">{isDarkMode ? 'Gelap' : 'Terang'}</span>
-                    </button>
-                    <MenuButton icon={HelpCircle} label="Bantuan & FAQ" onClick={() => setCurrentView('faq')} last />
                 </div>
-                
-                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden p-2 shadow-sm mt-6">
-                    <Button variant="danger" onClick={onLogout} className="flex items-center justify-center gap-2"><LogOut className="w-4 h-4" /> Keluar Akun</Button>
+
+                {/* CONTENT AREA: 2-COLUMN GRID ON PC */}
+                <div className="max-w-6xl mx-auto px-4 lg:px-8 mt-6 lg:mt-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 items-start">
+                        
+                        {/* LEFT COLUMN: GAMIFICATION & EXTRAS (2/5) */}
+                        <div className="lg:col-span-2 space-y-5">
+                            {currentView === 'point_history' ? (
+                                <div className="bg-white dark:bg-stone-900 rounded-[2.5rem] border border-stone-100 dark:border-stone-800 shadow-sm overflow-hidden animate-in fade-in">
+                                    <header className="p-5 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between">
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">Riwayat Poin</h3>
+                                        <button onClick={() => setCurrentView('main')} className="text-[10px] font-black text-orange-500 uppercase tracking-widest hover:underline transition-all">Tutup</button>
+                                    </header>
+                                    <div className="p-0 animate-view-enter">
+                                        <PointHistory 
+                                            currentUser={userData} 
+                                            onBack={() => setCurrentView('main')}
+                                            isEmbedded={true}
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <GamificationSummary 
+                                    currentUser={userData} 
+                                    currentPoints={typeof stats?.value3 === 'number' ? stats.value3 : 0} 
+                                    onViewHistory={() => setCurrentView('point_history')}
+                                />
+                            )}
+
+
+                        </div>
+
+                    {/* RIGHT COLUMN: MENUS (3/5) */}
+                    <div className="lg:col-span-3 space-y-5">
+                        {/* Aktivitas (Recipient only) */}
+                        {role === 'recipient' && (
+                            <div>
+                                <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 ml-1">Aktivitas</h3>
+                                <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden shadow-sm">
+                                    <MenuButton icon={Heart} label="Makanan Tersimpan" subtitle="Lihat daftar makanan yang disimpan" onClick={() => setCurrentView('saved')} last />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Akun Section */}
+                        <div>
+                            <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 ml-1">Akun</h3>
+                            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden shadow-sm">
+                                <MenuButton icon={User} label="Edit Profil" subtitle="Perbarui nama, email, dan foto" onClick={() => setCurrentView('edit')} />
+                                {role !== 'volunteer' && (
+                                    <MenuButton icon={MapPin} label="Alamat Tersimpan" subtitle="Kelola alamat pengiriman" onClick={() => setCurrentView('address')} />
+                                )}
+                                <MenuButton icon={Shield} label="Keamanan & Privasi" subtitle="Password dan verifikasi" onClick={() => setCurrentView('security')} />
+                                {role !== 'volunteer' && (
+                                    <MenuButton icon={Sparkles} label="Pengaturan API AI" subtitle="Konfigurasi kunci API" onClick={() => setCurrentView('ai_settings')} />
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Preferensi Section */}
+                        <div>
+                            <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 ml-1">Preferensi</h3>
+                            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl overflow-hidden shadow-sm">
+                                <button onClick={toggleTheme} className="w-full flex items-center justify-between p-4 lg:p-5 hover:bg-stone-50 dark:hover:bg-stone-800/60 transition-all duration-200 group border-b border-stone-100 dark:border-stone-800">
+                                    <div className="flex items-center gap-3 lg:gap-4">
+                                        <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-500 dark:text-stone-400 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/20 group-hover:text-orange-600 transition-colors">
+                                            {isDarkMode ? <Moon className="w-4 h-4 lg:w-5 lg:h-5 text-orange-400" /> : <Sun className="w-4 h-4 lg:w-5 lg:h-5 text-orange-500" />}
+                                        </div>
+                                        <div className="text-left">
+                                            <span className="text-stone-900 dark:text-stone-200 text-sm font-semibold block">Tema Aplikasi</span>
+                                            <span className="text-[10px] text-stone-400 font-medium hidden lg:block">Aktifkan mode {isDarkMode ? 'terang' : 'gelap'}</span>
+                                        </div>
+                                    </div>
+                                    <span className="text-xs text-stone-500 bg-stone-100 dark:bg-stone-800 px-3 py-1 rounded-full font-semibold">{isDarkMode ? 'Gelap' : 'Terang'}</span>
+                                </button>
+                                <MenuButton icon={HelpCircle} label="Bantuan & FAQ" subtitle="Pertanyaan umum dan panduan" onClick={() => setCurrentView('faq')} last />
+                            </div>
+                        </div>
+
+                        {/* Logout */}
+                        <div className="pt-2">
+                            <button 
+                                onClick={onLogout} 
+                                className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-3.5 bg-white dark:bg-stone-900 border border-red-100 dark:border-red-900/30 text-red-600 rounded-2xl font-semibold text-sm hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-300 active:scale-95"
+                            >
+                                <LogOut className="w-4 h-4" /> 
+                                Keluar Akun
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 );
 };
+

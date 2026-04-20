@@ -337,7 +337,7 @@ export const AddressList: React.FC<AddressListProps> = ({ addresses, onAddAddres
                     </div>
                 </div>
             ) : (
-                <div className="space-y-4 max-w-2xl mx-auto">
+                <div className="space-y-4 max-w-4xl mx-auto">
                     {addresses.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-[#1C1917] rounded-3xl border border-dashed border-stone-200 dark:border-[#292524] shadow-sm">
                             <div className="w-20 h-20 bg-red-50 dark:bg-red-900/10 rounded-full flex items-center justify-center mb-6 border border-red-100 dark:border-red-900/30">

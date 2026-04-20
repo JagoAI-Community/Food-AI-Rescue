@@ -186,7 +186,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({ userData, role, ba
                 )}
 
                 {/* Score Cards Dynamic */}
-                <div className="grid grid-cols-3 gap-3 px-4 mt-6 max-w-md mx-auto">
+                <div className="grid grid-cols-3 gap-3 px-4 mt-6 max-w-xl mx-auto">
                     <ScoreCard 
                         icon={role === 'volunteer' ? CheckCircle : role === 'provider' ? Package : Package} 
                         value={currentStats.value1} 

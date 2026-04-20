@@ -484,7 +484,9 @@ export const VolunteerIndex: React.FC<VolunteerIndexProps> = ({
                 )}
                 <button onClick={onOpenNotifications} className="relative p-3 bg-stone-50 dark:bg-stone-800 rounded-full border border-stone-200 dark:border-stone-700 text-stone-500 hover:text-orange-600 transition-all shadow-inner">
                     <Bell className="w-5 h-5" />
-                    <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
+                    {notifications.filter((n: any) => !n.isRead).length > 0 && (
+                        <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
+                    )}
                 </button>
             </div>
           </div>

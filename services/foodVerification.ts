@@ -60,13 +60,17 @@ export const foodVerification = {
 
       const aiResult = await db.verifyFood(payload, context?.userId || 'system');
 
+      const appSettings = await db.getSettings();
+
       // Local impact calculation logic
       const socialImpact = calculateDetailedImpact(
         aiResult.detectedItems || [],
         context?.weightGram || 500,
         context?.packagingType || 'plastic',
-        context?.quantityCount || 1
+        context?.quantityCount || 1,
+        appSettings
       );
+
 
       return {
         ...aiResult,
@@ -78,12 +82,15 @@ export const foodVerification = {
       console.error('[AI SERVICE] Backend analysis failed, using fallback:', error);
       
       const fallbackItems: DetectedItem[] = [{ name: context?.foodName || "Makanan", category: "Lainnya" }];
+      const appSettings = await db.getSettings();
       const fallbackImpact = calculateDetailedImpact(
         fallbackItems,
         context?.weightGram || 500,
         'plastic',
-        context?.quantityCount || 1
+        context?.quantityCount || 1,
+        appSettings
       );
+
 
       return {
         isSafe: true, isHalal: true, halalScore: 80, halalReasoning: "Fallback analysis", reasoning: "Gagal menghubungi AI Server. Menggunakan estimasi standar.",
@@ -121,16 +128,20 @@ const calculateDetailedImpact = (
   items: DetectedItem[], 
   weightGram: number, 
   packaging: string,
-  quantityCount: number = 1
+  quantityCount: number = 1,
+  appSettings: any = {}
 ): DetailedSocialImpact => {
   const count = items.length || 1;
   const weightPerItem = (weightGram / count) / 1000; // to kg
 
+  // Dynamically adjust CO2 calculations using config multiplier (if available, scale against average factor 2.5)
+  const co2Scale = appSettings.co2Multiplier ? parseFloat(appSettings.co2Multiplier) / 2.5 : 1.0;
+
   const co2Breakdown: ImpactBreakdownItem[] = items.map(item => ({
     name: item.name,
     weightKg: weightPerItem,
-    factor: EMISSION_FACTORS[item.category] || 1.2,
-    result: weightPerItem * (EMISSION_FACTORS[item.category] || 1.2),
+    factor: (EMISSION_FACTORS[item.category] || 1.2) * co2Scale,
+    result: weightPerItem * ((EMISSION_FACTORS[item.category] || 1.2) * co2Scale),
     category: item.category
   }));
 
@@ -142,8 +153,11 @@ const calculateDetailedImpact = (
     category: item.category
   }));
 
+  const pointsMultiplier = appSettings.pointsPerKg !== undefined ? parseFloat(appSettings.pointsPerKg) : 100;
+
   const totalCo2 = co2Breakdown.reduce((sum, item) => sum + item.result, 0) * quantityCount;
-  const totalPoints = Math.round(socialBreakdown.reduce((sum, item) => sum + item.result, 0) * 100 * quantityCount);
+  const totalPoints = Math.round(socialBreakdown.reduce((sum, item) => sum + item.result, 0) * pointsMultiplier * quantityCount);
+
 
   return {
     co2Saved: totalCo2,

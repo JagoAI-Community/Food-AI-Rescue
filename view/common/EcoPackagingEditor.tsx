@@ -1,6 +1,5 @@
-
-import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Sparkles, Package, Loader2, Copy, Check, Download, Zap, Plus, CheckCircle2, Search, LayoutGrid, List, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useMemo, useRef } from 'react';
+import { ArrowLeft, Sparkles, Package, Loader2, Copy, Check, Download, Zap, Plus, CheckCircle2, Search, LayoutGrid, List, Image as ImageIcon, Upload, Move, Maximize2, MoveHorizontal, MoveVertical } from 'lucide-react';
 import { Button } from '../components/Button';
 import { db } from '../../services/db';
 import { packagingDesign } from '../../services/packagingDesign';
@@ -12,13 +11,19 @@ interface EcoPackagingEditorProps {
     onBack: () => void;
 }
 
+const TEMPLATES = [
+    { id: 't1', name: 'Premium Kraft Box', url: 'https://images.unsplash.com/photo-1605600659873-d808a1d84f8c?auto=format&fit=crop&w=800&q=80' },
+    { id: 't2', name: 'Minimalist Paper Bag', url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80' },
+    { id: 't3', name: 'Eco Food Container', url: 'https://images.unsplash.com/photo-1621245842817-2de7649d21e8?auto=format&fit=crop&w=800&q=80' },
+    { id: 't4', name: 'Round Bio Bowl', url: 'https://images.unsplash.com/photo-1579751626657-72bc17010498?auto=format&fit=crop&w=800&q=80' }
+];
+
 export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentUser, foodItems, onBack }) => {
     const [selectedFoodId, setSelectedFoodId] = useState<string>(foodItems[0]?.id || '');
     const [customFoodName, setCustomFoodName] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [result, setResult] = useState<string | null>(null);
-    const [visualUrl, setVisualUrl] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -27,8 +32,16 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
     const [selectedStyle, setSelectedStyle] = useState('Modern Minimalist');
     const [materialConstraint, setMaterialConstraint] = useState('');
 
-    const [imageLoading, setImageLoading] = useState(false);
-    const [imageError, setImageError] = useState(false);
+    // CMS Editor Features
+    const [selectedTemplate, setSelectedTemplate] = useState(TEMPLATES[0]);
+    const [logoBase64, setLogoBase64] = useState<string | null>(null);
+    // Values relative to the container. Scale is a multiplier (1 = 100px base width).
+    // X and Y are percentages 0-100 to make it responsive
+    const [logoScale, setLogoScale] = useState<number>(1);
+    const [logoX, setLogoX] = useState<number>(50);
+    const [logoY, setLogoY] = useState<number>(50);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const artStyles = [
         { name: 'Modern Minimalist', icon: '✨' },
@@ -49,10 +62,7 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
         if (!foodName) return alert("Pilih menu atau masukkan nama makanan.");
 
         setIsGenerating(true);
-        setVisualUrl(null);
-        setImageError(false);
         try {
-            // Enhanced prompt logic for text concept if needed, but keeping service call simple
             const content = await packagingDesign.generate(
                 `${foodName} with ${selectedStyle} style${materialConstraint ? ` using ${materialConstraint}` : ''}`, 
                 currentUser?.role || 'corporate_donor'
@@ -65,25 +75,20 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
         }
     };
 
-    const handleGenerateVisual = () => {
-        if (!result) return;
-        const foodName = foodItems.find(f => f.id === selectedFoodId)?.name || customFoodName;
-        
-        // Build an advanced prompt based on new inputs
-        const stylePrompt = `in ${selectedStyle} style, ${materialConstraint ? `${materialConstraint} material emphasis, ` : ''}`;
-        const shortPrompt = `High-end eco-friendly sustainable food packaging for ${foodName}, ${stylePrompt}biodegradable materials, studio product photography, clean professional background, premium quality textures, cinematic lighting, 8k, realistic mockup`;
-        
-        const encodedPrompt = encodeURIComponent(shortPrompt);
-        const seed = Math.floor(Math.random() * 9999);
-        const url = `https://pollinations.ai/p/${encodedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true`;
-        
-        setImageLoading(true);
-        setImageError(false);
-        setVisualUrl(url);
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoBase64(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+        e.target.value = '';
     };
 
     const handleSaveDesain = async () => {
-        if (!currentUser?.id || !result || !visualUrl) return;
+        if (!currentUser?.id || !result) return;
         
         setIsSaving(true);
         try {
@@ -94,9 +99,13 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
                 title: `Eco Design: ${foodItems.find(f => f.id === selectedFoodId)?.name || customFoodName}`,
                 content: JSON.stringify({
                     concept: result,
-                    imageUrl: visualUrl,
                     style: selectedStyle,
-                    material: materialConstraint
+                    material: materialConstraint,
+                    // Store the visual builder config
+                    templateId: selectedTemplate.id,
+                    templateUrl: selectedTemplate.url,
+                    logo: logoBase64,
+                    editorConfig: { x: logoX, y: logoY, scale: logoScale }
                 })
             });
             alert("Desain berhasil disimpan ke riwayat Anda!");
@@ -114,6 +123,12 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const resetEditor = () => {
+        setLogoX(50);
+        setLogoY(50);
+        setLogoScale(1);
+    };
+
     return (
         <div className="fixed inset-0 z-[100] bg-white dark:bg-stone-950 flex flex-col md:max-w-6xl md:mx-auto md:relative md:h-[95vh] md:rounded-[3rem] md:shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-500">
             {/* Header */}
@@ -128,7 +143,7 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
                     <h2 className="text-xl font-black text-stone-900 dark:text-white leading-none tracking-tight uppercase italic flex items-center justify-center gap-2">
                         <Package className="w-5 h-5 text-indigo-500" /> Eco Packaging
                     </h2>
-                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-1">AI Design Assistant</p>
+                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-1">Design Editor CMS</p>
                 </div>
                 <div className="w-11"></div>
             </header>
@@ -168,7 +183,7 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
                                 />
                             </div>
 
-                            <div className={`grid gap-3 ${viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-1'}`}>
+                            <div className={`grid gap-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2 ${viewMode === 'grid' ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-1'}`}>
                                 {filteredItems.map(f => (
                                     <button 
                                         key={f.id}
@@ -199,7 +214,7 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
 
                         {/* 2. Style Selection */}
                         <div className="space-y-4">
-                            <h3 className="text-[10px] font-black text-stone-900 dark:text-white uppercase tracking-[0.2em]">02. Tema Visual</h3>
+                            <h3 className="text-[10px] font-black text-stone-900 dark:text-white uppercase tracking-[0.2em]">02. Tema Karang</h3>
                             <div className="flex flex-wrap gap-2">
                                 {artStyles.map(style => (
                                     <button
@@ -216,7 +231,7 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
 
                         {/* 3. Material Constraint */}
                         <div className="space-y-4">
-                            <h3 className="text-[10px] font-black text-stone-900 dark:text-white uppercase tracking-[0.2em]">03. Batasan Material</h3>
+                            <h3 className="text-[10px] font-black text-stone-900 dark:text-white uppercase tracking-[0.2em]">03. Batasan Material Utama</h3>
                             <input 
                                 type="text"
                                 placeholder="Cth: Daun Pisang, Pelepah Pinang, High-grade Cardboard..."
@@ -231,11 +246,11 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
                             disabled={isGenerating}
                             className="w-full h-16 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_100%] hover:bg-right transition-all duration-500 rounded-2xl text-white font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 active:scale-95"
                         >
-                            {isGenerating ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Sparkles className="w-5 h-5 mr-3" /> Generate Konsep</>}
+                            {isGenerating ? <Loader2 className="w-6 h-6 animate-spin" /> : <><Sparkles className="w-5 h-5 mr-3" /> Buat Blueprint Konsep AI</>}
                         </Button>
                     </div>
 
-                    {/* Right Column: Output (7/12) */}
+                    {/* Right Column: Editor CMS (7/12) */}
                     <div className="lg:col-span-7 space-y-6">
                         {!result ? (
                             <div className="h-full min-h-[600px] border-2 border-dashed border-stone-100 dark:border-stone-800 rounded-[3rem] flex flex-col items-center justify-center text-center p-12 space-y-6 bg-stone-50/30 dark:bg-stone-900/10">
@@ -244,9 +259,9 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
                                     <Package className="w-10 h-10 text-stone-200 group-hover:text-indigo-500 group-hover:scale-110 transition-all duration-500" />
                                 </div>
                                 <div className="max-w-xs space-y-3">
-                                    <h4 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-tight italic">Design Your Eco-Legacy</h4>
+                                    <h4 className="text-sm font-black text-stone-900 dark:text-white uppercase tracking-tight italic">Mulai Desain Anda</h4>
                                     <p className="text-[11px] text-stone-400 font-medium leading-relaxed">
-                                        Pilih produk dan tema visual di samping. AI kami akan merancang konsep kemasan inovatif untuk Anda.
+                                        Pilih produk dan material di samping untuk membuat deskripsi AI, lalu Anda dapat membuka Editor Mockup Kemasan secara otomatis.
                                     </p>
                                 </div>
                             </div>
@@ -279,88 +294,137 @@ export const EcoPackagingEditor: React.FC<EcoPackagingEditorProps> = ({ currentU
                                     </div>
                                 </div>
 
-                                {/* Visual Mockup Area */}
-                                <div className="bg-white dark:bg-stone-900 border-2 border-stone-100 dark:border-stone-800 rounded-[3rem] p-8 space-y-6 shadow-sm">
-                                    <div className="flex items-center justify-between">
+                                {/* Canva-like CMS Mockup Area */}
+                                <div className="bg-white dark:bg-stone-900 border-2 border-stone-100 dark:border-stone-800 rounded-[3rem] p-8 space-y-8 shadow-sm">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                         <div className="space-y-1">
-                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Visual Simulation</h4>
-                                            {visualUrl && <p className="text-[9px] font-bold text-indigo-500 uppercase">Style: {selectedStyle}</p>}
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-stone-400">Mockup Editor CMS</h4>
+                                            <p className="text-[9px] font-bold text-indigo-500 uppercase">Pilih Template, Upload Logo, Posisikan.</p>
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                className="hidden" 
+                                                ref={fileInputRef} 
+                                                onChange={handleLogoUpload} 
+                                            />
                                             <Button 
-                                                onClick={handleGenerateVisual}
-                                                disabled={imageLoading}
+                                                onClick={() => fileInputRef.current?.click()}
                                                 variant="outline"
-                                                className="bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-900/20 text-indigo-600 rounded-xl text-[9px] font-black uppercase py-2.5 px-6 shadow-none hover:bg-indigo-100 active:scale-95"
+                                                className="border-indigo-200 dark:border-indigo-900/30 text-indigo-600 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl text-[10px] font-black uppercase py-2 cursor-pointer shadow-none hover:bg-indigo-100"
                                             >
-                                                {imageLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ImageIcon className="w-4 h-4 mr-2" /> {visualUrl ? 'Regenerate' : 'Render Visual'}</>}
+                                                <Upload className="w-3.5 h-3.5 mr-2" /> 
+                                                {logoBase64 ? 'Ubah Logo' : 'Upload Logo'}
                                             </Button>
                                         </div>
                                     </div>
 
-                                    <div className="relative aspect-square rounded-[2rem] overflow-hidden border border-stone-100 dark:border-stone-800 bg-stone-50 dark:bg-black/40 group">
-                                        {visualUrl && (
-                                            <>
-                                                <img 
-                                                    src={visualUrl} 
-                                                    alt="Packaging Mockup" 
-                                                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ${imageLoading ? 'opacity-0 scale-110 blur-xl' : 'opacity-100 scale-100 blur-0'}`}
-                                                    onLoad={() => setImageLoading(false)}
-                                                    onError={() => { setImageLoading(false); setImageError(true); }}
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-stone-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            </>
-                                        )}
-                                        
-                                        {imageLoading && (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10 backdrop-blur-sm bg-white/10">
-                                                <div className="w-16 h-16 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
-                                                <div className="text-center">
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Mentransformasi Ide...</p>
-                                                    <p className="text-[8px] text-stone-400 uppercase mt-1">Estimasi 5-10 detik</p>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {imageError && !imageLoading && (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10">
-                                                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
-                                                    <ImageIcon className="w-8 h-8 text-red-300" />
-                                                </div>
-                                                <p className="text-[10px] font-bold text-red-500">Koneksi terganggu. Gagal memuat simulasi.</p>
-                                                <button onClick={handleGenerateVisual} className="text-[9px] font-black uppercase bg-stone-900 text-white px-6 py-2.5 rounded-xl">
-                                                    Coba Ulangi
+                                    {/* Template Selection */}
+                                    <div className="space-y-3">
+                                        <p className="text-[9px] font-bold text-stone-500 uppercase">Pilih Blank Template</p>
+                                        <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
+                                            {TEMPLATES.map(temp => (
+                                                <button
+                                                    key={temp.id}
+                                                    onClick={() => setSelectedTemplate(temp)}
+                                                    className={`shrink-0 relative w-24 h-24 rounded-[1.5rem] overflow-hidden border-2 transition-all ${selectedTemplate.id === temp.id ? 'border-indigo-500 shadow-lg' : 'border-stone-200 dark:border-stone-800 hover:border-indigo-300'}`}
+                                                >
+                                                    <img src={temp.url} alt={temp.name} className="w-full h-full object-cover" />
+                                                    {selectedTemplate.id === temp.id && (
+                                                        <div className="absolute inset-0 bg-indigo-500/20" />
+                                                    )}
                                                 </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Visual Canvas Area */}
+                                    <div className="relative aspect-video md:aspect-square bg-stone-100 dark:bg-stone-950 rounded-[2rem] overflow-hidden border-2 border-stone-200 dark:border-stone-800 shadow-inner group">
+                                        <img src={selectedTemplate.url} alt="Template Box" className="w-full h-full object-cover" />
+                                        
+                                        {/* Logo Overlay */}
+                                        {logoBase64 && (
+                                            <div 
+                                                className="absolute border border-dashed border-indigo-500/0 group-hover:border-indigo-500/50 transition-colors"
+                                                style={{
+                                                    top: `${logoY}%`,
+                                                    left: `${logoX}%`,
+                                                    transform: 'translate(-50%, -50%)',
+                                                    width: `${logoScale * 100}px`
+                                                }}
+                                            >
+                                                <img src={logoBase64} alt="Brand Logo" className="w-full h-auto drop-shadow-md" />
                                             </div>
                                         )}
 
-                                        {!visualUrl && !imageLoading && (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 text-stone-300 px-12 text-center">
-                                                <div className="w-16 h-16 bg-white dark:bg-stone-900 rounded-[2rem] shadow-sm flex items-center justify-center">
-                                                    <ImageIcon className="w-8 h-8 opacity-20" />
-                                                </div>
-                                                <p className="text-[10px] font-bold leading-relaxed">Klik "Render Visual" untuk melihat visualisasi kemasan ramah lingkungan Anda.</p>
+                                        {!logoBase64 && (
+                                            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm flex flex-col items-center justify-center text-white">
+                                                <ImageIcon className="w-10 h-10 mb-2 opacity-50" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Upload Logo Untuk Mulai</span>
                                             </div>
                                         )}
                                     </div>
 
-                                    {visualUrl && !imageLoading && !imageError && (
-                                        <div className="flex gap-4">
+                                    {/* Editor Controls */}
+                                    {logoBase64 && (
+                                        <div className="bg-stone-50 dark:bg-stone-950 p-6 rounded-2xl border border-stone-100 dark:border-stone-900 space-y-6">
+                                            <div className="flex items-center justify-between">
+                                                <h5 className="text-[10px] font-black uppercase text-stone-900 dark:text-white flex items-center gap-2">
+                                                    <Move className="w-4 h-4 text-indigo-500" /> Kontrol Posisi Logo
+                                                </h5>
+                                                <button onClick={resetEditor} className="text-[9px] text-stone-400 hover:text-indigo-500 font-bold uppercase transition-colors">Reset</button>
+                                            </div>
+                                            
+                                            <div className="space-y-5">
+                                                {/* X Axis Control */}
+                                                <div className="space-y-3">
+                                                    <div className="flex justify-between text-[9px] font-bold text-stone-500 uppercase">
+                                                        <span className="flex items-center gap-1.5"><MoveHorizontal className="w-3 h-3" /> Geser Kiri-Kanan</span>
+                                                        <span>{logoX}%</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range" min="0" max="100" value={logoX} onChange={(e) => setLogoX(Number(e.target.value))}
+                                                        className="w-full h-2 bg-stone-200 dark:bg-stone-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                                    />
+                                                </div>
+                                                
+                                                {/* Y Axis Control */}
+                                                <div className="space-y-3">
+                                                    <div className="flex justify-between text-[9px] font-bold text-stone-500 uppercase">
+                                                        <span className="flex items-center gap-1.5"><MoveVertical className="w-3 h-3" /> Geser Atas-Bawah</span>
+                                                        <span>{logoY}%</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range" min="0" max="100" value={logoY} onChange={(e) => setLogoY(Number(e.target.value))}
+                                                        className="w-full h-2 bg-stone-200 dark:bg-stone-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                                    />
+                                                </div>
+
+                                                {/* Scale Control */}
+                                                <div className="space-y-3">
+                                                    <div className="flex justify-between text-[9px] font-bold text-stone-500 uppercase">
+                                                        <span className="flex items-center gap-1.5"><Maximize2 className="w-3 h-3" /> Ukuran Logo</span>
+                                                        <span>{Math.round(logoScale * 100)}%</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range" min="0.2" max="3" step="0.1" value={logoScale} onChange={(e) => setLogoScale(Number(e.target.value))}
+                                                        className="w-full h-2 bg-stone-200 dark:bg-stone-800 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {logoBase64 && (
+                                        <div className="pt-4 border-t border-stone-100 dark:border-stone-800">
                                             <button 
                                                 onClick={handleSaveDesain}
                                                 disabled={isSaving}
-                                                className="flex-1 py-4 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                                                className="w-full h-14 bg-stone-900 dark:bg-white text-white dark:text-stone-900 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
                                             >
-                                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4" /> Simpan Konsep</>}
+                                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-5 h-5" /> Simpan Konsep & Mockup</>}
                                             </button>
-                                            <a 
-                                                href={visualUrl} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 active:scale-95 transition-all flex items-center justify-center gap-2"
-                                            >
-                                                <Download className="w-4 h-4" /> Download Design
-                                            </a>
                                         </div>
                                     )}
                                 </div>

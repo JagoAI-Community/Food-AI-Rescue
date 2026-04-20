@@ -74,7 +74,8 @@ export const getDateTimeParts = (dateStr?: string, timeStr?: string) => {
 };
 
 export const isFoodExpired = (distributionEnd?: string, expiryTime?: string): boolean => {
-  const targetStr = distributionEnd || expiryTime;
+  // Use expiryTime as the primary source for the absolute deadline
+  const targetStr = expiryTime || distributionEnd;
   if (!targetStr) return false;
   
   const parts = getDateTimeParts(targetStr);
@@ -93,9 +94,12 @@ export const isFoodExpired = (distributionEnd?: string, expiryTime?: string): bo
   
   // Current time in Jakarta (WIB)
   const now = new Date();
-  const jakartaNow = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
-  
-  return jakartaNow > expiryDate;
+  try {
+    const jakartaNow = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+    return jakartaNow > expiryDate;
+  } catch (e) {
+    return now > expiryDate;
+  }
 };
 
 export const formatDateTime = (dateStr?: string, timeStr?: string): string => {

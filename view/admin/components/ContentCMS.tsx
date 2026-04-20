@@ -9,9 +9,11 @@ interface ContentCMSProps {
     setFaqs?: React.Dispatch<React.SetStateAction<FAQItem[]>>;
     onRefresh?: () => void;
     currentUser?: UserData | null;
+    appSettings?: any;
 }
 
 // Simple Markdown Parser for Preview
+
 const parseMarkdown = (text: string) => {
     if (!text) return '';
     // Bold: **text**
@@ -52,8 +54,9 @@ const DeviceFrame: React.FC<{ device: 'phone' | 'tablet' | 'laptop', children: R
     );
 };
 
-export const ContentCMS: React.FC<ContentCMSProps> = ({ faqs = [], setFaqs, onRefresh, currentUser }) => {
+export const ContentCMS: React.FC<ContentCMSProps> = ({ faqs = [], setFaqs, onRefresh, currentUser, appSettings }) => {
   const [previewDevice, setPreviewDevice] = useState<'phone' | 'tablet' | 'laptop'>('phone');
+
   const [faqForm, setFaqForm] = useState<FAQItem>({ id: '', question: '', answer: '', category: 'Umum' });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditingFaq, setIsEditingFaq] = useState(false);
@@ -359,10 +362,14 @@ export const ContentCMS: React.FC<ContentCMSProps> = ({ faqs = [], setFaqs, onRe
 
                                   <div className="bg-stone-900 dark:bg-black rounded-2xl p-6 text-center text-white border border-white/5 shadow-lg">
                                       <h5 className="font-black text-xs uppercase mb-3 tracking-widest">Butuh Bantuan?</h5>
-                                      <button className="bg-[#25D366] text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-2 mx-auto shadow-xl shadow-green-500/20 active:scale-95 transition-all">
+                                      <button 
+                                          onClick={() => window.open(`https://wa.me/${appSettings?.supportPhone || '628123456789'}`, '_blank')}
+                                          className="bg-[#25D366] text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-2 mx-auto shadow-xl shadow-green-500/20 active:scale-95 transition-all"
+                                      >
                                           <MessageSquare className="w-3.5 h-3.5" /> WhatsApp Support
                                       </button>
                                   </div>
+
                               </div>
                           </DeviceFrame>
                       </div>
@@ -382,8 +389,9 @@ export const ContentCMS: React.FC<ContentCMSProps> = ({ faqs = [], setFaqs, onRe
                               </div>
                               <div>
                                   <h3 className="font-black text-stone-900 dark:text-white text-lg uppercase italic tracking-tight leading-tight">{isEditingFaq ? 'Edit Konten FAQ' : 'Buat Konten FAQ Baru'}</h3>
-                                  <p className="text-[10px] text-stone-500 font-bold uppercase tracking-widest mt-1">Editor FAQ Food AI Rescue</p>
+                                  <p className="text-[10px] text-stone-500 font-bold uppercase tracking-widest mt-1">Editor FAQ {appSettings?.appName || 'Food AI Rescue'}</p>
                               </div>
+
                           </div>
                           <button onClick={() => setIsModalOpen(false)} className="p-2.5 bg-white dark:bg-stone-800 rounded-2xl text-stone-400 hover:text-stone-900 dark:hover:text-white transition-all border border-stone-200 dark:border-stone-700 shadow-sm"><X className="w-5 h-5" /></button>
                       </div>

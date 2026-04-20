@@ -18,7 +18,10 @@ interface InventoryManagerProps {
     onRefresh?: () => void; 
     onNavigate: (view: string) => void;
     initialView?: 'stock' | 'orders' | 'history';
+    isReadOnly?: boolean;
+    disableExpiryLogic?: boolean;
 }
+
 
 export const InventoryManager: React.FC<InventoryManagerProps> = ({
     foodItems,
@@ -32,8 +35,11 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
     currentUser,
     onRefresh,
     onNavigate,
-    initialView = 'stock'
+    initialView = 'stock',
+    isReadOnly = false,
+    disableExpiryLogic = false
 }) => {
+
     const [currentView, setCurrentView] = useState<'stock' | 'orders' | 'history'>(initialView);
     const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -122,8 +128,11 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
             isLoading={isTransitioning} // Pass loading state
             onRefresh={onRefresh} // Pass refresh
             onNavigate={onNavigate}
+            isReadOnly={isReadOnly}
+            disableExpiryLogic={disableExpiryLogic}
         />;
     }
+
 
     if (currentView === 'orders') {
         return <OrderList 

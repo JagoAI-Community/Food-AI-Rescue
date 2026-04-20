@@ -91,8 +91,9 @@ export const AdminIndex: React.FC<AdminIndexProps> = ({
       case 'communication':
         return <Communication broadcastMessages={broadcastMessages} setBroadcastMessages={setBroadcastMessages} onRefresh={() => onRefresh && onRefresh()} currentUser={currentUser} />;
       case 'content':
-        return <ContentCMS faqs={globalFAQs} setFaqs={setGlobalFAQs} onRefresh={() => onRefresh && onRefresh()} currentUser={currentUser} />;
+        return <ContentCMS faqs={globalFAQs} setFaqs={setGlobalFAQs} onRefresh={() => onRefresh && onRefresh()} currentUser={currentUser} appSettings={appSettings} />;
       case 'admins':
+
         return <AdminList currentUser={currentUser} onMenuRefresh={() => onRefresh && onRefresh()} />;
       case 'ranks':
         return <RanksManagement />;
@@ -118,8 +119,9 @@ export const AdminIndex: React.FC<AdminIndexProps> = ({
             {!isSidebarCollapsed && (
                 <div>
                     <h1 className="text-xl font-black text-white italic tracking-tighter">ADMIN</h1>
-                    <p className="text-[10px] uppercase tracking-widest font-bold text-orange-500">Food AI Rescue</p>
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-orange-500">{appSettings?.appName || 'Food AI Rescue'}</p>
                 </div>
+
             )}
             <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-stone-400"><X className="w-6 h-6" /></button>
             <button 

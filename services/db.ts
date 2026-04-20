@@ -1,5 +1,5 @@
 
-import { FoodItem, UserData, ClaimHistoryItem, FAQItem, BroadcastMessage, Address, AdminUser, SystemLog } from '../types';
+import { FoodItem, UserData, ClaimHistoryItem, FAQItem, BroadcastMessage, Address, AdminUser, SystemLog, Badge, Notification } from '../types';
 
 /**
  * URL Google Apps Script Web App.

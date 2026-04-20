@@ -28,6 +28,7 @@ interface ProviderIndexProps {
   notifications?: any[];
   onRefresh?: () => void;
   socialSystem?: any;
+  disableExpiryLogic?: boolean;
 }
 
 export const ProviderIndex: React.FC<ProviderIndexProps> = ({ 
@@ -44,9 +45,9 @@ export const ProviderIndex: React.FC<ProviderIndexProps> = ({
   const [socialImpact, setSocialImpact] = useState<any>(null);
   const [isLoadingImpact, setIsLoadingImpact] = useState(true);
   const [showKitchenScanner, setShowKitchenScanner] = useState(false);
+  const [kitchenInitialTab, setKitchenInitialTab] = useState<'scan' | 'history'>('scan');
   const [showPackagingEditor, setShowPackagingEditor] = useState(false);
   const [showCSREditor, setShowCSREditor] = useState(false);
-  const [showKitchenHistory, setShowKitchenHistory] = useState(false);
   
   const userName = currentUser?.name || 'Restoran Berkah';
 
@@ -100,10 +101,9 @@ export const ProviderIndex: React.FC<ProviderIndexProps> = ({
   }, [foodItems, claimHistory, userName, socialImpact]);
 
   const renderContent = () => {
-      if (showKitchenScanner) return <KitchenScanner currentUser={currentUser} onBack={() => setShowKitchenScanner(false)} />;
+      if (showKitchenScanner) return <KitchenScanner currentUser={currentUser} onBack={() => setShowKitchenScanner(false)} initialTab={kitchenInitialTab} />;
       if (showPackagingEditor) return <EcoPackagingEditor currentUser={currentUser} foodItems={foodItems} onBack={() => setShowPackagingEditor(false)} />;
       if (showCSREditor) return <CSRWriterEditor currentUser={currentUser} foodItems={foodItems} onBack={() => setShowCSREditor(false)} />;
-      if (showKitchenHistory) return <KitchenHistory currentUser={currentUser} onBack={() => setShowKitchenHistory(false)} />;
 
       return (
           <div className="p-6 md:p-8 max-w-5xl mx-auto pb-32">
@@ -118,28 +118,13 @@ export const ProviderIndex: React.FC<ProviderIndexProps> = ({
                       className="relative p-3 bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 text-stone-500 hover:text-orange-600 transition-all shadow-sm group active:scale-95"
                   >
                       <Bell className="w-6 h-6" />
-                      <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-orange-600 border-2 border-white rounded-full animate-pulse"></span>
+                      {notifications.filter((n: any) => !n.isRead).length > 0 && (
+                          <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-orange-600 border-2 border-white rounded-full animate-pulse"></span>
+                      )}
                   </button>
               </header>
 
-              <div className="mb-8 p-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2.5rem] shadow-xl shadow-orange-500/20 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
-                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                      <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.5 bg-white/20 backdrop-blur-md rounded-full text-[9px] font-black text-white uppercase tracking-widest">Fitur Baru</span>
-                          </div>
-                          <h3 className="text-xl font-black text-white leading-tight">Gak tahu mau masak apa? <br/> Foto bahan makananmu di sini!</h3>
-                          <p className="text-white/70 text-[10px] font-medium uppercase tracking-widest">AI rekomendasikan resep sisa pangan kreatif</p>
-                      </div>
-                      <button 
-                          onClick={() => setShowKitchenScanner(true)}
-                          className="px-8 py-4 bg-white text-orange-600 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-orange-50 transition-all shadow-lg active:scale-95"
-                      >
-                          Buka Kitchen AI
-                      </button>
-                  </div>
-              </div>
+              {/* Kitchen AI Promo removed as per user request */}
               
               <DashboardStats 
                   setActiveTab={onNavigate} 
@@ -157,7 +142,10 @@ export const ProviderIndex: React.FC<ProviderIndexProps> = ({
                       currentUser={currentUser} 
                       foodItems={foodItems} 
                       onOpenTool={(tool) => {
-                          if (tool === 'recipe') setShowKitchenScanner(true);
+                          if (tool === 'recipe') {
+                              setKitchenInitialTab('scan');
+                              setShowKitchenScanner(true);
+                          }
                           if (tool === 'packaging') setShowPackagingEditor(true);
                           if (tool === 'csr') setShowCSREditor(true);
                       }}
@@ -173,7 +161,10 @@ export const ProviderIndex: React.FC<ProviderIndexProps> = ({
                   
                   <div className="grid grid-cols-2 gap-4">
                       <button 
-                          onClick={() => setShowKitchenScanner(true)}
+                          onClick={() => {
+                              setKitchenInitialTab('scan');
+                              setShowKitchenScanner(true);
+                          }}
                           className="p-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-[2.5rem] flex flex-col items-center text-center gap-3 hover:border-orange-500 hover:shadow-xl hover:shadow-orange-100 transition-all group"
                       >
                           <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
@@ -186,7 +177,10 @@ export const ProviderIndex: React.FC<ProviderIndexProps> = ({
                       </button>
 
                       <button 
-                          onClick={() => setShowKitchenHistory(true)}
+                          onClick={() => {
+                              setKitchenInitialTab('history');
+                              setShowKitchenScanner(true);
+                          }}
                           className="p-6 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-[2.5rem] flex flex-col items-center text-center gap-3 hover:border-orange-500 hover:shadow-xl hover:shadow-orange-100 transition-all group"
                       >
                           <div className="w-14 h-14 bg-stone-100 dark:bg-stone-800 rounded-2xl flex items-center justify-center text-stone-400 group-hover:text-orange-600 group-hover:scale-110 transition-transform">
